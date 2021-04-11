@@ -44,7 +44,7 @@
        Verbose mode. (for CHECK command)</pre>
 
 ### Examples:
-#### Encryption/decryption with SM4 symmetric cipher (default):
+#### Encryption/decryption with SM4 symmetric block cipher:
 <pre>./gmsmtk -crypt -key $128bitkey < plaintext.ext > ciphertext.ext
 ./gmsmtk -crypt -key $128bitkey < ciphertext.ext > plaintext.ext
 </pre>
