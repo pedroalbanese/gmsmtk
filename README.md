@@ -18,8 +18,7 @@
   - [x] SM4 Encryption
 
 ### Usage:
-<pre>
- -check string
+<pre> -check string
        Check hashsum file.
  -crypt
        Encrypt/Decrypt with symmetric cipher SM4.
@@ -34,7 +33,7 @@
  -key string
        Secret key/Password.
  -pbkdf2
-       PBKDF2.
+       Password-based key derivation function.
  -rand
        Generate random 128-bit cryptographic key.
  -rec
