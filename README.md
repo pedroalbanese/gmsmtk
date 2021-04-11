@@ -1,4 +1,4 @@
-# GMSM Toolkit
+# GMSM Toolkit ☭
 
 #### SM3/SM4 Is the Chinese Natinal Standard Algoritms
 * GM/T 0004-2012 - SM3 Message digest algorithm. 256-bit hash value.
