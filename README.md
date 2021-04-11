@@ -1,6 +1,6 @@
 # GMSM Toolkit
 
-#### SM2/SM3 Is the Chinese Natinal Standard Algoritms
+#### SM3/SM4 Is the Chinese Natinal Standard Algoritms
 * GM/T 0004-2012 - SM3 Message digest algorithm. 256-bit hash value.
 * GB/T 32907-2016 - SM4 Symmetric block cipher with 128-bit key.
 
