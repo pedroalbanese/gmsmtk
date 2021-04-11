@@ -13,7 +13,7 @@ Multi purpose cross-platform cryptography tool for encryption / decryption, hash
 
 #### TODO:
   - [ ] SM2 ECDSA
-  - [ ] SM2 ECDH
+  - [ ] SM2 Encryption
   - [x] SM3 HMAC
   - [x] SM3 Message Digest
   - [x] SM4 Encryption
