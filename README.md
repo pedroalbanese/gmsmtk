@@ -13,6 +13,9 @@ GB/T 32907-2016 - SM4 Symmetric block cipher with 128-bit key.
 #### TODO:
   - [ ] SM2 ECDSA
   - [ ] SM2 ECDH
+  - [x] SM3 HMAC
+  - [x] SM3 Message Digest
+  - [x] SM4 Encryption
 
 ### Usage:
 <pre>
