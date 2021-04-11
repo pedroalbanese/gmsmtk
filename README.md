@@ -64,6 +64,6 @@
 #### Note:
 The PBKDF2 function can be combined with the CRYPT and HMAC commands:
 <pre>./gmsmtk -crypt -pbkdf2 -key "pass" < plaintext.ext > ciphertext.ext
-./gosttk -hmac -pbkdf2 -key "pass" -iter 10000 -salt "salt" < file.ext
+./gmsmtk -hmac -pbkdf2 -key "pass" -iter 10000 -salt "salt" < file.ext
 </pre>
 ##### Copyright (c) 2020-2021 Pedro Albanese - ALBANESE Lab.
