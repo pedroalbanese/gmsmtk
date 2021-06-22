@@ -17,8 +17,8 @@ Multi purpose cross-platform cryptography tool for encryption / decryption, hash
   - [ ] SM2 Encryption
   - [x] SM3 HMAC
   - [x] SM3 Message Digest
-  - [x] SM4 Encryption
   - [x] SM4 CMAC
+  - [x] SM4 Encryption
 
 ### Usage:
 <pre> -check string
