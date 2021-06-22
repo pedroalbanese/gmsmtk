@@ -8,6 +8,7 @@ Multi purpose cross-platform cryptography tool for encryption / decryption, hash
 #### Cryptographic Functions:
 * Symmetric Encryption/Decryption
 * Hash Digest 
+* CMAC (Cipher-based message authentication code)
 * HMAC (Hash-based message authentication code)
 * PBKDF2 (Password-based key derivation function 2)
 
@@ -17,6 +18,7 @@ Multi purpose cross-platform cryptography tool for encryption / decryption, hash
   - [x] SM3 HMAC
   - [x] SM3 Message Digest
   - [x] SM4 Encryption
+  - [x] SM4 CMAC
 
 ### Usage:
 <pre> -check string
