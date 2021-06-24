@@ -355,6 +355,10 @@ func main() {
 			log.Fatal(err)
 		}
 		scanner := bufio.NewScanner(os.Stdin)
+		if !scanner.Scan() {
+			log.Printf("Failed to read: %v", scanner.Err())
+			return
+		}
 		line := scanner.Bytes()
 		sign, err := priv.Sign(rand.Reader, []byte(line), nil)
 		if err != nil {
@@ -369,10 +373,19 @@ func main() {
 			log.Fatal(err)
 		}
 		scanner := bufio.NewScanner(os.Stdin)
+		if !scanner.Scan() {
+			log.Printf("Failed to read: %v", scanner.Err())
+			return
+		}
 		line := scanner.Bytes()
 		signature, _ := hex.DecodeString(*sign)
 		isok := pub.Verify([]byte(line), []byte(signature))
-		fmt.Printf("Verified: %v\n", isok)
+		if isok == true {
+			fmt.Printf("Verified: %v\n", isok)
+			os.Exit(0)
+		} else {
+			fmt.Printf("Verified: %v\n", isok)
+			os.Exit(1)
+		}
 	}
 }
-
