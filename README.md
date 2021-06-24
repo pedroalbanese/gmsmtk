@@ -30,14 +30,18 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
        Cipher-based message authentication code.
  -crypt
        Encrypt/Decrypt with symmetric cipher SM4.
+ -decode
+       Decode hex string to binary format.
  -digest
        Compute single hashsum with SM3.
+ -encode
+       Encode binary string to hex format.
  -hashsum string
        Target file/wildcard to generate hashsum list.
  -hmac
        Hash-based message authentication code.
  -iter int
-       Iterations. (for PBKDF2) (default 1)
+       Iterations. (for PBKDF2 and SHRED commands) (default 1)
  -key string
        Private/Public key, Secret key or Password.
  -keygen
@@ -47,21 +51,23 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
  -pbkdf2
        Password-based key derivation function.
  -rand
-       Generate random 128-bit cryptographic key.
+       Generate random cryptographic key.
  -recursive
        Process directories recursively.
  -salt string
        Salt. (for PBKDF2)
  -short
-       Generate 64-bit key. (for RAND and PBKDF2 command)
+       Generate 64-bit key. (for PBKDF2 and RAND commands)
+ -shred string
+       Files/Path/Wildcard to apply data sanitization method.
  -sign
        Sign with PrivateKey.
  -signature string
        Input signature. (for verification only)
  -sm2dec
-       Decrypt with SM2 PrivateKey.
+       Decrypt with asymmetric SM2 PrivateKey.
  -sm2enc
-       Encrypt with SM2 Publickey.
+       Encrypt with asymmetric SM2 Publickey.
  -verbose
        Verbose mode. (for CHECK command)
  -verify
