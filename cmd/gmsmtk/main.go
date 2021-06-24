@@ -249,6 +249,7 @@ func main() {
 				}
 				fmt.Println(hex.EncodeToString(h.Sum(nil)), "*"+f.Name())
 			}
+			f.Close()
 		}
 	}
 
@@ -276,6 +277,7 @@ func main() {
 						if _, err := io.Copy(h, f); err != nil {
 							log.Fatal(err)
 						}
+						f.Close()
 						fmt.Println(hex.EncodeToString(h.Sum(nil)), "*"+f.Name())
 					}
 				}
@@ -317,6 +319,7 @@ func main() {
 						log.Fatal(err)
 					}
 					io.Copy(h, f)
+					f.Close()
 
 					if *verbose {
 						if hex.EncodeToString(h.Sum(nil)) == lines[0] {
