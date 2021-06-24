@@ -1,4 +1,3 @@
-//go:generate goversioninfo -manifest=testdata/resource/goversioninfo.exe.manifest
 package main
 
 import (
@@ -13,8 +12,10 @@ import (
 	"github.com/pedroalbanese/gmsm/sm2"
 	"github.com/pedroalbanese/gmsm/sm3"
 	"github.com/pedroalbanese/gmsm/sm4"
+	"github.com/pedroalbanese/shred"
 	"golang.org/x/crypto/pbkdf2"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -25,19 +26,22 @@ var (
 	check   = flag.String("check", "", "Check hashsum file.")
 	ciphmac = flag.Bool("cmac", false, "Cipher-based message authentication code.")
 	crypt   = flag.Bool("crypt", false, "Encrypt/Decrypt with symmetric cipher SM4.")
-	dec     = flag.Bool("sm2dec", false, "Decrypt with SM2 PrivateKey.")
+	dec     = flag.Bool("sm2dec", false, "Decrypt with asymmetric SM2 PrivateKey.")
+	decode  = flag.Bool("decode", false, "Decode hex string to binary format.")
+	del     = flag.String("shred", "", "Files/Path/Wildcard to apply data sanitization method.")
 	digest  = flag.Bool("digest", false, "Compute single hashsum with SM3.")
-	enc     = flag.Bool("sm2enc", false, "Encrypt with SM2 Publickey.")
+	enc     = flag.Bool("sm2enc", false, "Encrypt with asymmetric SM2 Publickey.")
+	encode  = flag.Bool("encode", false, "Encode binary string to hex format.")
 	gen     = flag.Bool("keygen", false, "Generate asymmetric key pair.")
-	iter    = flag.Int("iter", 1, "Iterations. (for PBKDF2)")
+	iter    = flag.Int("iter", 1, "Iterations. (for PBKDF2 and SHRED commands)")
 	key     = flag.String("key", "", "Private/Public key, Secret key or Password.")
 	mac     = flag.Bool("hmac", false, "Hash-based message authentication code.")
 	mode    = flag.String("mode", "CTR", "Mode of operation: CTR or OFB.")
 	pbkdf   = flag.Bool("pbkdf2", false, "Password-based key derivation function.")
-	random  = flag.Bool("rand", false, "Generate random 128-bit cryptographic key.")
+	random  = flag.Bool("rand", false, "Generate random cryptographic key.")
 	rec     = flag.Bool("recursive", false, "Process directories recursively.")
 	salt    = flag.String("salt", "", "Salt. (for PBKDF2)")
-	short   = flag.Bool("short", false, "Generate 64-bit key. (for RAND and PBKDF2 command)")
+	short   = flag.Bool("short", false, "Generate 64-bit key. (for PBKDF2 and RAND commands)")
 	sig     = flag.Bool("sign", false, "Sign with PrivateKey.")
 	sign    = flag.String("signature", "", "Input signature. (for verification only)")
 	target  = flag.String("hashsum", "", "Target file/wildcard to generate hashsum list.")
@@ -78,6 +82,35 @@ func main() {
 		}
 		fmt.Println(hex.EncodeToString(key))
 		os.Exit(0)
+	}
+
+	if *encode == true {
+		b, err := ioutil.ReadAll(os.Stdin)
+		if len(b) == 0 {
+			os.Exit(0)
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+		o := make([]byte, hex.EncodedLen(len(b)))
+		hex.Encode(o, b)
+		os.Stdout.Write(o)
+	}
+
+	if *decode == true {
+		b, err := ioutil.ReadAll(os.Stdin)
+		if len(b) < 2 {
+			os.Exit(0)
+		}
+		if (len(b)%2 != 0) || (err != nil) {
+			log.Fatal(err)
+		}
+		o := make([]byte, hex.DecodedLen(len(b)))
+		_, err = hex.Decode(o, b)
+		if err != nil {
+			log.Fatal(err)
+		}
+		os.Stdout.Write(o)
 	}
 
 	if *crypt == true {
@@ -152,7 +185,7 @@ func main() {
 		} else {
 			keyHex = *key
 			if len(keyHex) != 128/8 {
-				fmt.Println("Secret key must have 64-bit. (try \"-rand 128\")")
+				fmt.Println("Secret key must have 64-bit. (try \"-rand -short\")")
 				os.Exit(1)
 			}
 		}
@@ -393,6 +426,22 @@ func main() {
 		} else {
 			fmt.Printf("Verified: %v\n", isok)
 			os.Exit(1)
+		}
+	}
+
+	if *del != "" {
+		shredder := shred.Shredder{}
+		shredconf := shred.NewShredderConf(&shredder, shred.WriteZeros|shred.WriteRand, *iter, true)
+		matches, err := filepath.Glob(*del)
+		if err != nil {
+			panic(err)
+		}
+
+		for _, match := range matches {
+			err := shredconf.ShredDir(match)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 }
