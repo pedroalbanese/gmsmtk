@@ -37,11 +37,13 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
  -hmac
        Hash-based message authentication code.
  -iter int
-       Iterations. (for PBKDF2) (default 1024)
+       Iterations. (for PBKDF2) (default 1)
  -key string
        Private/Public key, Secret key or Password.
  -keygen
        Generate asymmetric key pair.
+ -mode string
+       Mode of operation: CTR or OFB. (default "CTR")
  -pbkdf2
        Password-based key derivation function.
  -rand
@@ -55,7 +57,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
  -sign
        Sign with PrivateKey.
  -signature string
-       String to Encrypt/Decrypt.
+       Input signature. (for verification only)
  -sm2dec
        Decrypt with SM2 PrivateKey.
  -sm2enc
