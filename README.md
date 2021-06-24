@@ -74,6 +74,10 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
        Verify with PublicKey.</pre>
 
 ### Examples:
+#### Encryption/decryption with SM2 asymmetric cipher:
+<pre>./gmsmtk -sm2enc -key $PublicKey < plaintext.ext > ciphertext.ext
+./gmsmtk -sm2dec -key $PrivateKey < ciphertext.ext > plaintext.ext
+</pre>
 #### Encryption/decryption with SM4 symmetric block cipher:
 <pre>./gmsmtk -crypt -key $128bitkey < plaintext.ext > ciphertext.ext
 ./gmsmtk -crypt -key $128bitkey < ciphertext.ext > plaintext.ext
