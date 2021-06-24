@@ -6,15 +6,17 @@ Multi purpose cross-platform cryptography tool for encryption / decryption, hash
 * GB/T 32907-2016 - SM4 Symmetric block cipher with 128-bit key.
 
 #### Cryptographic Functions:
+* Asymmetric Encryption/Decryption
 * Symmetric Encryption/Decryption
+* Digital Signature
 * Hash Digest 
 * CMAC (Cipher-based message authentication code)
 * HMAC (Hash-based message authentication code)
 * PBKDF2 (Password-based key derivation function 2)
 
 #### TODO:
-  - [ ] SM2 ECDSA
-  - [ ] SM2 Encryption
+  - [X] SM2 ECDSA
+  - [X] SM2 Encryption
   - [x] SM3 HMAC
   - [x] SM3 Message Digest
   - [x] SM4 CMAC
@@ -23,6 +25,8 @@ Multi purpose cross-platform cryptography tool for encryption / decryption, hash
 ### Usage:
 <pre> -check string
        Check hashsum file.
+ -cmac
+       Cipher-based message authentication code.
  -crypt
        Encrypt/Decrypt with symmetric cipher SM4.
  -digest
@@ -34,17 +38,31 @@ Multi purpose cross-platform cryptography tool for encryption / decryption, hash
  -iter int
        Iterations. (for PBKDF2) (default 1024)
  -key string
-       Secret key/Password.
+       Private/Public key, Secret key or Password.
+ -keygen
+       Generate asymmetric key pair.
  -pbkdf2
        Password-based key derivation function.
  -rand
        Generate random 128-bit cryptographic key.
- -rec
+ -recursive
        Process directories recursively.
  -salt string
        Salt. (for PBKDF2)
- -verb
-       Verbose mode. (for CHECK command)</pre>
+ -short
+       Generate 64-bit key. (for RAND and PBKDF2 command)
+ -sign
+       Sign with PrivateKey.
+ -signature string
+       String to Encrypt/Decrypt.
+ -sm2dec
+       Decrypt with SM2 PrivateKey.
+ -sm2enc
+       Encrypt with SM2 Publickey.
+ -verbose
+       Verbose mode. (for CHECK command)
+ -verify
+       Verify with PublicKey.</pre>
 
 ### Examples:
 #### Encryption/decryption with SM4 symmetric block cipher:
