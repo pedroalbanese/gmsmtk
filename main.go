@@ -9,8 +9,9 @@ import (
 	"flag"
 	"fmt"
 	"github.com/pedroalbanese/cmac"
-	"github.com/pedroalbanese/gmcrypto/sm3"
-	"github.com/pedroalbanese/gmcrypto/sm4"
+	"github.com/pedroalbanese/gmsm/sm2"
+	"github.com/pedroalbanese/gmsm/sm3"
+	"github.com/pedroalbanese/gmsm/sm4"
 	"golang.org/x/crypto/pbkdf2"
 	"io"
 	"log"
@@ -20,20 +21,26 @@ import (
 )
 
 var (
-	check     = flag.String("check", "", "Check hashsum file.")
-	ciphmac   = flag.Bool("cmac", false, "Cipher-based message authentication code.")
-	crypt     = flag.Bool("crypt", false, "Encrypt/Decrypt with symmetric cipher SM4.")
-	digest    = flag.Bool("digest", false, "Compute single hashsum with SM3.")
-	iter      = flag.Int("iter", 1024, "Iterations. (for PBKDF2)")
-	key       = flag.String("key", "", "Secret key/Password.")
-	mac       = flag.Bool("hmac", false, "Hash-based message authentication code.")
-	pbkdf     = flag.Bool("pbkdf2", false, "Password-based key derivation function.")
-	random    = flag.Bool("rand", false, "Generate random 128-bit cryptographic key.")
-	recursive = flag.Bool("rec", false, "Process directories recursively.")
-	salt      = flag.String("salt", "", "Salt. (for PBKDF2)")
-	target    = flag.String("hashsum", "", "Target file/wildcard to generate hashsum list.")
-	verbose   = flag.Bool("verb", false, "Verbose mode. (for CHECK command)")
-	short     = flag.Bool("short", false, "Generate 64-bit key. (for RAND and PBKDF2 command)")
+	check   = flag.String("check", "", "Check hashsum file.")
+	ciphmac = flag.Bool("cmac", false, "Cipher-based message authentication code.")
+	crypt   = flag.Bool("crypt", false, "Encrypt/Decrypt with symmetric cipher SM4.")
+	dec     = flag.Bool("sm2dec", false, "Decrypt with SM2 PrivateKey.")
+	digest  = flag.Bool("digest", false, "Compute single hashsum with SM3.")
+	enc     = flag.Bool("sm2enc", false, "Encrypt with SM2 Publickey.")
+	gen     = flag.Bool("keygen", false, "Generate asymmetric key pair.")
+	iter    = flag.Int("iter", 1024, "Iterations. (for PBKDF2)")
+	key     = flag.String("key", "", "Private/Public key, Secret key or Password.")
+	mac     = flag.Bool("hmac", false, "Hash-based message authentication code.")
+	pbkdf   = flag.Bool("pbkdf2", false, "Password-based key derivation function.")
+	random  = flag.Bool("rand", false, "Generate random 128-bit cryptographic key.")
+	rec     = flag.Bool("recursive", false, "Process directories recursively.")
+	salt    = flag.String("salt", "", "Salt. (for PBKDF2)")
+	short   = flag.Bool("short", false, "Generate 64-bit key. (for RAND and PBKDF2 command)")
+	sig     = flag.Bool("sign", false, "Sign with PrivateKey.")
+	sign    = flag.String("signature", "", "String to Encrypt/Decrypt.")
+	target  = flag.String("hashsum", "", "Target file/wildcard to generate hashsum list.")
+	verbose = flag.Bool("verbose", false, "Verbose mode. (for CHECK command)")
+	verify  = flag.Bool("verify", false, "Verify with PublicKey.")
 )
 
 func main() {
@@ -182,7 +189,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *target != "" && *recursive == false {
+	if *target != "" && *rec == false {
 		files, err := filepath.Glob(*target)
 		if err != nil {
 			log.Fatal(err)
@@ -205,7 +212,7 @@ func main() {
 		}
 	}
 
-	if *target != "" && *recursive == true {
+	if *target != "" && *rec == true {
 		err := filepath.Walk(filepath.Dir(*target),
 			func(path string, info os.FileInfo, err error) error {
 				if err != nil {
@@ -293,4 +300,79 @@ func main() {
 			}
 		}
 	}
+
+	if *gen == true {
+		priv, err := sm2.GenerateKey(rand.Reader)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pub := &priv.PublicKey
+
+		fmt.Println("Private= " + WritePrivateKeyToHex(priv))
+		fmt.Println("Public= " + WritePublicKeyToHex(pub))
+	}
+
+	if *enc {
+		pub, err := ReadPublicKeyFromHex(*key)
+		if err != nil {
+			log.Fatal(err)
+		}
+		scanner := bufio.NewScanner(os.Stdin)
+		if !scanner.Scan() {
+			log.Printf("Failed to read: %v", scanner.Err())
+			return
+		}
+		line := scanner.Bytes()
+		ciphertxt, err := pub.EncryptAsn1([]byte(line), rand.Reader)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%x\n", ciphertxt)
+	}
+
+	if *dec {
+		priv, err := ReadPrivateKeyFromHex(*key)
+		if err != nil {
+			log.Fatal(err)
+		}
+		scanner := bufio.NewScanner(os.Stdin)
+		if !scanner.Scan() {
+			log.Printf("Failed to read: %v", scanner.Err())
+			return
+		}
+		line := scanner.Bytes()
+		str, _ := hex.DecodeString(string(line))
+		plaintxt, err := priv.DecryptAsn1([]byte(str))
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%s\n", plaintxt)
+	}
+
+	if *sig {
+		priv, err := ReadPrivateKeyFromHex(*key)
+		if err != nil {
+			log.Fatal(err)
+		}
+		scanner := bufio.NewScanner(os.Stdin)
+		line := scanner.Bytes()
+		sign, err := priv.Sign(rand.Reader, []byte(line), nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%x\n", sign)
+	}
+
+	if *verify {
+		pub, err := ReadPublicKeyFromHex(*key)
+		if err != nil {
+			log.Fatal(err)
+		}
+		scanner := bufio.NewScanner(os.Stdin)
+		line := scanner.Bytes()
+		signature, _ := hex.DecodeString(*sign)
+		isok := pub.Verify([]byte(line), []byte(signature))
+		fmt.Printf("Verified: %v\n", isok)
+	}
 }
+
