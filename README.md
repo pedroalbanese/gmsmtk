@@ -1,5 +1,5 @@
 # GMSM Toolkit ☭
-Multi purpose cross-platform cryptography tool for asymmetric/symmetric encryption, digital signature, cipher-based message authentication code (CMAC) hash digest, hash-based message authentication code (HMAC) and PBKDF2 function.
+Multi purpose cross-platform cryptography tool for asymmetric/symmetric encryption, digital signature, cipher-based message authentication code (CMAC), hash digest, hash-based message authentication code (HMAC) and PBKDF2 function.
 
 #### SM2/SM3/SM4 Chinese National Standard Algoritms:
 * GB/T 32918-2016 - SM2 Public key algorithm 256-bit.
