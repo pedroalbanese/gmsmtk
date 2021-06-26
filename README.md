@@ -2,9 +2,9 @@
 Multi purpose cross-platform cryptography tool for asymmetric/symmetric encryption, digital signature, cipher-based message authentication code (CMAC), hash digest, hash-based message authentication code (HMAC) and PBKDF2 function.
 
 #### SM2/SM3/SM4 Chinese National Standard Algoritms:
-* GB/T 32918-2016 - SM2 Public key algorithm 256-bit.
+* GM/T 0003-2012 - SM2 Public key algorithm 256-bit.
 * GM/T 0004-2012 - SM3 Message digest algorithm. 256-bit hash value.
-* GB/T 32907-2016 - SM4 Symmetric block cipher with 128-bit key.
+* GM/T 0002-2012 - SM4 Symmetric block cipher with 128-bit key.
 
 #### Cryptographic Functions:
 * Asymmetric Encryption/Decryption
