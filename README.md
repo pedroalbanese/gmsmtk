@@ -29,7 +29,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
  -cmac
        Cipher-based message authentication code.
  -crypt
-       Encrypt/Decrypt with symmetric cipher SM4.
+       Encrypt/Decrypt with SM4 block cipher.
  -decode
        Decode hex string to binary format.
  -digest
@@ -81,6 +81,9 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 #### Symmetric encryption/decryption with SM4 block cipher:
 <pre>./gmsmtk -crypt -key $128bitkey < plaintext.ext > ciphertext.ext
 ./gmsmtk -crypt -key $128bitkey < ciphertext.ext > plaintext.ext
+</pre>
+#### CMAC-SM4 (cipher-based message authentication code):
+<pre>./gmsmtk -cmac -key $64bitkey < file.ext
 </pre>
 #### SM3 hashsum (list):
 <pre>./gmsmtk -hashsum "*.*" [-recursive]
