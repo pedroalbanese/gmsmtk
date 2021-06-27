@@ -71,7 +71,9 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
  -verbose
        Verbose mode. (for CHECK command)
  -verify
-       Verify with PublicKey.</pre>
+       Verify with PublicKey.
+ -version
+       Print version information.</pre>
 
 ### Examples:
 #### Asymmetric encryption/decryption with SM2 algorithm:
