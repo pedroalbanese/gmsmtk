@@ -12,6 +12,7 @@ import (
 	"github.com/pedroalbanese/gmsm/sm2"
 	"github.com/pedroalbanese/gmsm/sm3"
 	"github.com/pedroalbanese/gmsm/sm4"
+	"github.com/pedroalbanese/gmsmtk"
 	"github.com/pedroalbanese/shred"
 	"golang.org/x/crypto/pbkdf2"
 	"io"
@@ -25,7 +26,7 @@ import (
 var (
 	check   = flag.String("check", "", "Check hashsum file.")
 	ciphmac = flag.Bool("cmac", false, "Cipher-based message authentication code.")
-	crypt   = flag.Bool("crypt", false, "Encrypt/Decrypt with symmetric cipher SM4.")
+	crypt   = flag.Bool("crypt", false, "Encrypt/Decrypt with SM4 block cipher.")
 	dec     = flag.Bool("sm2dec", false, "Decrypt with asymmetric SM2 PrivateKey.")
 	decode  = flag.Bool("decode", false, "Decode hex string to binary format.")
 	del     = flag.String("shred", "", "Files/Path/Wildcard to apply data sanitization method.")
@@ -47,17 +48,21 @@ var (
 	target  = flag.String("hashsum", "", "Target file/wildcard to generate hashsum list.")
 	verbose = flag.Bool("verbose", false, "Verbose mode. (for CHECK command)")
 	verify  = flag.Bool("verify", false, "Verify with PublicKey.")
+	version = flag.Bool("version", false, "Print version information.")
 )
 
 func main() {
 	flag.Parse()
 
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "GMSM Cipher Suite - Chinese National Standard Toolkit")
-		fmt.Fprintln(os.Stderr, "Copyright (c) 2020-2021 Pedro Albanese. All rights reserved.\n")
 		fmt.Fprintln(os.Stderr, "Usage of", os.Args[0]+":")
 		flag.PrintDefaults()
-		os.Exit(0)
+		os.Exit(1)
+	}
+
+	if *version {
+		fmt.Println(gmsmtk.Version)
+		return
 	}
 
 	if *random == true && *short == false {
@@ -180,7 +185,7 @@ func main() {
 		var keyHex string
 		var prvRaw []byte
 		if *pbkdf == true {
-			prvRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
+			prvRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 8, sm3.New)
 			keyHex = hex.EncodeToString(prvRaw)
 		} else {
 			keyHex = *key
@@ -434,7 +439,7 @@ func main() {
 
 	if *del != "" {
 		shredder := shred.Shredder{}
-		shredconf := shred.NewShredderConf(&shredder, shred.WriteRand|shred.WriteZeros, *iter, true)
+		shredconf := shred.NewShredderConf(&shredder, shred.WriteZeros|shred.WriteRand, *iter, true)
 		matches, err := filepath.Glob(*del)
 		if err != nil {
 			panic(err)
