@@ -439,7 +439,7 @@ func main() {
 
 	if *del != "" {
 		shredder := shred.Shredder{}
-		shredconf := shred.NewShredderConf(&shredder, shred.WriteZeros|shred.WriteRand, *iter, true)
+		shredconf := shred.NewShredderConf(&shredder, shred.WriteRand|shred.WriteZeros, *iter, true)
 		matches, err := filepath.Glob(*del)
 		if err != nil {
 			panic(err)
