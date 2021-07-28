@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/cipher"
 	"crypto/hmac"
 	"crypto/rand"
@@ -365,13 +366,11 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		scanner := bufio.NewScanner(os.Stdin)
-		if !scanner.Scan() {
-			log.Printf("Failed to read: %v", scanner.Err())
-			return
-		}
-		line := scanner.Bytes()
-		ciphertxt, err := pub.EncryptAsn1([]byte(line), rand.Reader)
+		buf := bytes.NewBuffer(nil)
+		data := os.Stdin
+		io.Copy(buf, data)
+		scanner := string(buf.Bytes())
+		ciphertxt, err := pub.EncryptAsn1([]byte(scanner), rand.Reader)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -402,13 +401,11 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		scanner := bufio.NewScanner(os.Stdin)
-		if !scanner.Scan() {
-			log.Printf("Failed to read: %v", scanner.Err())
-			return
-		}
-		line := scanner.Bytes()
-		sign, err := priv.Sign(rand.Reader, []byte(line), nil)
+		buf := bytes.NewBuffer(nil)
+		data := os.Stdin
+		io.Copy(buf, data)
+		scanner := string(buf.Bytes())
+		sign, err := priv.Sign(rand.Reader, []byte(scanner), nil)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -420,14 +417,12 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		scanner := bufio.NewScanner(os.Stdin)
-		if !scanner.Scan() {
-			log.Printf("Failed to read: %v", scanner.Err())
-			return
-		}
-		line := scanner.Bytes()
+		buf := bytes.NewBuffer(nil)
+		data := os.Stdin
+		io.Copy(buf, data)
+		scanner := string(buf.Bytes())
 		signature, _ := hex.DecodeString(*sign)
-		isok := pub.Verify([]byte(line), []byte(signature))
+		isok := pub.Verify([]byte(scanner), []byte(signature))
 		if isok == true {
 			fmt.Printf("Verified: %v\n", isok)
 			os.Exit(0)
