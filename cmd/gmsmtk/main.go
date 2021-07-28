@@ -382,13 +382,11 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		scanner := bufio.NewScanner(os.Stdin)
-		if !scanner.Scan() {
-			log.Printf("Failed to read: %v", scanner.Err())
-			return
-		}
-		line := scanner.Bytes()
-		str, _ := hex.DecodeString(string(line))
+		buf := bytes.NewBuffer(nil)
+		data := os.Stdin
+		io.Copy(buf, data)
+		scanner := string(buf.Bytes())
+		str, _ := hex.DecodeString(string(scanner))
 		plaintxt, err := priv.DecryptAsn1([]byte(str))
 		if err != nil {
 			log.Fatal(err)
