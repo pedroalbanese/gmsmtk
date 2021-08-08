@@ -9,8 +9,8 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 #### Cryptographic Functions:
 * Asymmetric Encryption/Decryption
 * Symmetric Encryption/Decryption
-* Digital Signature
-* Hash Digest 
+* Digital Signature (ECDSA)
+* Recusive Hash Digest + Check 
 * CMAC (Cipher-based message authentication code)
 * HMAC (Hash-based message authentication code)
 * PBKDF2 (Password-based key derivation function 2)
