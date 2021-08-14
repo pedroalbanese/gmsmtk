@@ -10,12 +10,14 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 * Asymmetric Encryption/Decryption
 * Symmetric Encryption/Decryption
 * Digital Signature (ECDSA)
+* Shared Key Agreement Signature (ECDH)
 * Recusive Hash Digest + Check 
 * CMAC (Cipher-based message authentication code)
 * HMAC (Hash-based message authentication code)
 * PBKDF2 (Password-based key derivation function 2)
 
 #### TODO:
+  - [X] SM2 ECDH
   - [X] SM2 ECDSA
   - [X] SM2 Encryption
   - [x] SM3 HMAC
@@ -24,7 +26,9 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
   - [x] SM4 Encryption
 
 ### Usage:
-<pre> -check string
+<pre> -bits int
+       Bit-length. (for PBKDF2 and RAND commands) (default 128)
+ -check string
        Check hashsum file.
  -cmac
        Cipher-based message authentication code.
@@ -32,8 +36,10 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
        Encrypt/Decrypt with SM4 block cipher.
  -decode
        Decode hex string to binary format.
+ -derive
+       Derive shared secret key (SM2-ECDH).
  -digest
-       Compute single hashsum with SM3.
+       Compute single hashsum with SM3 algorithm.
  -encode
        Encode binary string to hex format.
  -hashsum string
@@ -50,14 +56,14 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
        Mode of operation: CTR or OFB. (default "CTR")
  -pbkdf2
        Password-based key derivation function.
+ -pub string
+       Remote's side public key. (for shared key derivation)
  -rand
        Generate random cryptographic key.
  -recursive
        Process directories recursively.
  -salt string
        Salt. (for PBKDF2)
- -short
-       Generate 64-bit key. (for PBKDF2 and RAND commands)
  -shred string
        Files/Path/Wildcard to apply data sanitization method.
  -sign
@@ -76,6 +82,12 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
        Print version information.</pre>
 
 ### Examples:
+#### Asymmetric SM2 keypair generation:
+<pre>./gmsmtk -keygen
+</pre>
+#### Shared secret key negociation:
+<pre>./gmsmtk -derive -key $PrivateKey -pub $PublicKey
+</pre>
 #### Asymmetric encryption/decryption with SM2 algorithm:
 <pre>./gmsmtk -sm2enc -key $PublicKey < plaintext.ext > ciphertext.ext
 ./gmsmtk -sm2dec -key $PrivateKey < ciphertext.ext > plaintext.ext
