@@ -25,13 +25,15 @@ import (
 )
 
 var (
+	bit     = flag.Int("bits", 128, "Bit-length. (for PBKDF2 and RAND commands)")
 	check   = flag.String("check", "", "Check hashsum file.")
 	ciphmac = flag.Bool("cmac", false, "Cipher-based message authentication code.")
 	crypt   = flag.Bool("crypt", false, "Encrypt/Decrypt with SM4 block cipher.")
 	dec     = flag.Bool("sm2dec", false, "Decrypt with asymmetric SM2 PrivateKey.")
 	decode  = flag.Bool("decode", false, "Decode hex string to binary format.")
 	del     = flag.String("shred", "", "Files/Path/Wildcard to apply data sanitization method.")
-	digest  = flag.Bool("digest", false, "Compute single hashsum with SM3.")
+	derive  = flag.Bool("derive", false, "Derive shared secret key (SM2-ECDH).")
+	digest  = flag.Bool("digest", false, "Compute single hashsum with SM3 algorithm.")
 	enc     = flag.Bool("sm2enc", false, "Encrypt with asymmetric SM2 Publickey.")
 	encode  = flag.Bool("encode", false, "Encode binary string to hex format.")
 	gen     = flag.Bool("keygen", false, "Generate asymmetric key pair.")
@@ -40,10 +42,10 @@ var (
 	mac     = flag.Bool("hmac", false, "Hash-based message authentication code.")
 	mode    = flag.String("mode", "CTR", "Mode of operation: CTR or OFB.")
 	pbkdf   = flag.Bool("pbkdf2", false, "Password-based key derivation function.")
+	public  = flag.String("pub", "", "Remote's side public key. (for shared key derivation)")
 	random  = flag.Bool("rand", false, "Generate random cryptographic key.")
 	rec     = flag.Bool("recursive", false, "Process directories recursively.")
 	salt    = flag.String("salt", "", "Salt. (for PBKDF2)")
-	short   = flag.Bool("short", false, "Generate 64-bit key. (for PBKDF2 and RAND commands)")
 	sig     = flag.Bool("sign", false, "Sign with PrivateKey.")
 	sign    = flag.String("signature", "", "Input signature. (for verification only)")
 	target  = flag.String("hashsum", "", "Target file/wildcard to generate hashsum list.")
@@ -66,7 +68,19 @@ func main() {
 		return
 	}
 
-	if *random == true && *short == false {
+	if *random == true && *bit == 256 {
+		var key []byte
+		var err error
+		key = make([]byte, 32)
+		_, err = io.ReadFull(rand.Reader, key)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(hex.EncodeToString(key))
+		os.Exit(0)
+	}
+
+	if *random == true && *bit == 128 {
 		var key []byte
 		var err error
 		key = make([]byte, 16)
@@ -78,7 +92,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *random == true && *short == true {
+	if *random == true && *bit == 64 {
 		var key []byte
 		var err error
 		key = make([]byte, 8)
@@ -230,18 +244,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *pbkdf == true && *crypt == false && *mac == false && *short == false {
-		prvRaw := pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
-		fmt.Println(hex.EncodeToString(prvRaw))
-		os.Exit(0)
-	}
-
-	if *pbkdf == true && *crypt == false && *mac == false && *short == true {
-		prvRaw := pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 8, sm3.New)
-		fmt.Println(hex.EncodeToString(prvRaw))
-		os.Exit(0)
-	}
-
 	if *target != "" && *rec == false {
 		files, err := filepath.Glob(*target)
 		if err != nil {
@@ -358,14 +360,47 @@ func main() {
 	}
 
 	if *gen == true {
-		priv, err := sm2.GenerateKey(rand.Reader)
-		if err != nil {
-			log.Fatal(err)
+		var err error
+		var prvRaw []byte
+		var priv *sm2.PrivateKey
+		if *key != "" && *pbkdf == false {
+			priv, err = ReadPrivateKeyFromHex(*key)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else if *key != "" && *pbkdf {
+			prvRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 32, sm3.New)
+			priv, err = ReadPrivateKeyFromHex(hex.EncodeToString(prvRaw))
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			priv, err = sm2.GenerateKey(rand.Reader)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
+
 		pub := &priv.PublicKey
 
 		fmt.Println("Private= " + WritePrivateKeyToHex(priv))
 		fmt.Println("Public= " + WritePublicKeyToHex(pub))
+		os.Exit(0)
+	}
+
+	if *derive {
+		private, err := ReadPrivateKeyFromHex(*key)
+		if err != nil {
+			log.Fatal(err)
+		}
+		public, err := ReadPublicKeyFromHex(*public)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		b, _ := public.Curve.ScalarMult(public.X, public.Y, private.D.Bytes())
+		shared := sm3.Sm3Sum(b.Bytes())
+		fmt.Printf("Shared= %x\n", shared)
 	}
 
 	if *enc {
@@ -451,5 +486,23 @@ func main() {
 				log.Fatal(err)
 			}
 		}
+	}
+
+	if *pbkdf == true && *crypt == false && *mac == false && *bit == 64 {
+		prvRaw := pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 8, sm3.New)
+		fmt.Println(hex.EncodeToString(prvRaw))
+		os.Exit(0)
+	}
+
+	if *pbkdf == true && *crypt == false && *mac == false && *bit == 128 {
+		prvRaw := pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
+		fmt.Println(hex.EncodeToString(prvRaw))
+		os.Exit(0)
+	}
+
+	if *pbkdf == true && *crypt == false && *mac == false && *bit == 256 {
+		prvRaw := pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 32, sm3.New)
+		fmt.Println(hex.EncodeToString(prvRaw))
+		os.Exit(0)
 	}
 }
