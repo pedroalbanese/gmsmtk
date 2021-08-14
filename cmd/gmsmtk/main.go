@@ -68,34 +68,10 @@ func main() {
 		return
 	}
 
-	if *random == true && *bit == 256 {
+	if *random == true && (*bit == 256 || *bit == 128 || *bit == 64) {
 		var key []byte
 		var err error
-		key = make([]byte, 32)
-		_, err = io.ReadFull(rand.Reader, key)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(hex.EncodeToString(key))
-		os.Exit(0)
-	}
-
-	if *random == true && *bit == 128 {
-		var key []byte
-		var err error
-		key = make([]byte, 16)
-		_, err = io.ReadFull(rand.Reader, key)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(hex.EncodeToString(key))
-		os.Exit(0)
-	}
-
-	if *random == true && *bit == 64 {
-		var key []byte
-		var err error
-		key = make([]byte, 8)
+		key = make([]byte, *bit/8)
 		_, err = io.ReadFull(rand.Reader, key)
 		if err != nil {
 			log.Fatal(err)
@@ -488,20 +464,8 @@ func main() {
 		}
 	}
 
-	if *pbkdf == true && *crypt == false && *mac == false && *bit == 64 {
-		prvRaw := pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 8, sm3.New)
-		fmt.Println(hex.EncodeToString(prvRaw))
-		os.Exit(0)
-	}
-
-	if *pbkdf == true && *crypt == false && *mac == false && *bit == 128 {
-		prvRaw := pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
-		fmt.Println(hex.EncodeToString(prvRaw))
-		os.Exit(0)
-	}
-
-	if *pbkdf == true && *crypt == false && *mac == false && *bit == 256 {
-		prvRaw := pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 32, sm3.New)
+	if *pbkdf == true && *crypt == false && *mac == false && (*bit == 256 || *bit == 128 || *bit == 64) {
+		prvRaw := pbkdf2.Key([]byte(*key), []byte(*salt), *iter, *bit/8, sm3.New)
 		fmt.Println(hex.EncodeToString(prvRaw))
 		os.Exit(0)
 	}
