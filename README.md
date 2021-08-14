@@ -27,7 +27,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 
 ### Usage:
 <pre> -bits int
-       Bit-length. (for PBKDF2 and RAND commands) (default 128)
+       Bit-length. (for DERIVE, PBKDF2 and RAND) (default 128)
  -check string
        Check hashsum file.
  -cmac
@@ -37,7 +37,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
  -decode
        Decode hex string to binary format.
  -derive
-       Derive shared secret key (SM2-ECDH).
+       Derive shared secret key (SM2-ECDH) 128-bit default.
  -digest
        Compute single hashsum with SM3 algorithm.
  -encode
