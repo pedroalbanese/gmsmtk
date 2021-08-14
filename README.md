@@ -10,7 +10,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 * Asymmetric Encryption/Decryption
 * Symmetric Encryption/Decryption
 * Digital Signature (ECDSA)
-* Shared Key Agreement Signature (ECDH)
+* Shared Key Agreement (ECDH)
 * Recusive Hash Digest + Check 
 * CMAC (Cipher-based message authentication code)
 * HMAC (Hash-based message authentication code)
