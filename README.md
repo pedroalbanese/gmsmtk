@@ -85,8 +85,13 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 #### Asymmetric SM2 keypair generation:
 <pre>./gmsmtk -keygen
 </pre>
-#### Shared secret key negotiation:
+#### Derive shared secret key (SM2-ECDH):
 <pre>./gmsmtk -derive -key $PrivateKey -pub $PublicKey
+</pre>
+#### Signature (SM2-ECDSA):
+<pre>./gmsmtk -sign -key $PrivateKey < file.ext > sign.txt
+sign=$(cat sign.txt)
+./gmsmtk -verify -key $PublicKey -signature $sign < file.ext
 </pre>
 #### Asymmetric encryption/decryption with SM2 algorithm:
 <pre>./gmsmtk -sm2enc -key $PublicKey < plaintext.ext > ciphertext.ext
