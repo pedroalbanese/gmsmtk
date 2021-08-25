@@ -127,7 +127,16 @@ The PBKDF2 function can be combined with the CRYPT and HMAC commands:
 <pre>./gmsmtk -crypt -pbkdf2 -key "pass" < plaintext.ext > ciphertext.ext
 ./gmsmtk -hmac -pbkdf2 -key "pass" -iter 10000 -salt "salt" < file.ext
 </pre>
-
+#### Shred (Data sanitization method, 25 iterations):
+<pre>./gmsmtk -shred keypair.ini -iter 25
+</pre>
+#### Hex to PEM/PEM to Hex:
+<pre>echo $pubkey|./gmsmtk -pem enc [-salt "PEM BLOCK;TYPE,ALG"] > Pubkey.pem
+./gmsmtk -pem dec [-salt "PEM BLOCK"] < Pubkey.pem
+</pre>
+#### Random Art (Public Key Fingerprint):
+<pre>./gmsmtk -key $pubkey
+</pre>
 ## License
 
 This project is licensed under the ISC License.
