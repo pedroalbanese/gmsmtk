@@ -453,9 +453,9 @@ func main() {
 		var rb []byte
 		if *salt != "" {
 			salt := *salt
-			split = strings.Split(salt, ",")
+			split = strings.Split(salt, ";")
 			if len(split) < 2 {
-				fmt.Println("Derivation needs two salts separated by comma.")
+				fmt.Println("Derivation needs two salts separated by semicolon.")
 				os.Exit(2)
 			}
 
@@ -470,6 +470,7 @@ func main() {
 		os.Exit(0)
 
 	}
+
 	if *derive == "b" {
 		private, err := ReadPrivateKeyFromHex(*key)
 		if err != nil {
@@ -487,7 +488,7 @@ func main() {
 			salt := *salt
 			split = strings.Split(salt, ",")
 			if len(split) < 2 {
-				fmt.Println("Derivation needs two salts separated by comma.")
+				fmt.Println("Derivation needs two salts separated by semicolon.")
 				os.Exit(2)
 			}
 			ra = sm3.Sm3Sum([]byte(split[0]))
