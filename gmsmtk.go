@@ -1,4 +1,4 @@
 // Pure Go GMSM Cipher Suite.
 package gmsmtk
 
-const Version = "1.1.3"
+const Version = "1.1.4"
