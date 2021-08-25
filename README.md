@@ -36,14 +36,14 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
        Encrypt/Decrypt with SM4 block cipher.
  -decode
        Decode hex string to binary format.
- -derive
+ -derive string
        Derive shared secret key (SM2-ECDH) 128-bit default.
  -digest
        Compute single hashsum with SM3 algorithm.
- -encode
-       Encode binary string to hex format.
  -hashsum string
        Target file/wildcard to generate hashsum list.
+ -hex string
+       Encode binary string to hex format and vice-versa.
  -hmac
        Hash-based message authentication code.
  -iter int
@@ -51,11 +51,13 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
  -key string
        Private/Public key, Secret key or Password.
  -keygen
-       Generate asymmetric key pair.
+       Generate asymmetric EC-SM2 keypair.
  -mode string
        Mode of operation: CTR or OFB. (default "CTR")
  -pbkdf2
        Password-based key derivation function.
+ -pem string
+       Encode hex string to pem format and vice-versa.
  -pub string
        Remote's side public key. (for shared key derivation)
  -rand
@@ -71,9 +73,9 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
  -signature string
        Input signature. (for verification only)
  -sm2dec
-       Decrypt with asymmetric SM2 PrivateKey.
+       Encrypt with asymmetric EC-SM2 Publickey.
  -sm2enc
-       Encrypt with asymmetric SM2 Publickey.
+       Decrypt with asymmetric EC-SM2 Privatekey.
  -verbose
        Verbose mode. (for CHECK command)
  -verify
