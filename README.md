@@ -26,7 +26,9 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
   - [x] SM4 Encryption
 
 ### Usage:
-<pre> -bits int
+<pre> -acrypt string
+       Encrypt/Decrypt with asymmetric EC-SM2 algorithm.
+ -bits int
        Bit-length. (for DERIVE, PBKDF2 and RAND) (default 128)
  -check string
        Check hashsum file. (- for STDIN)
@@ -68,8 +70,6 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
        Sign with PrivateKey.
  -signature string
        Input signature. (for verification only)
- -sm2 string
-       Encrypt/Decrypt with asymmetric EC-SM2 algorithm.
  -tcp string
        TCP/IP Transfer Protocol.
  -verbose
@@ -96,8 +96,8 @@ sign=$(cat sign.txt)
 ./gmsmtk -verify -key $PublicKey -signature $sign < file.ext
 </pre>
 #### Asymmetric encryption/decryption with SM2 algorithm:
-<pre>./gmsmtk -sm2 enc -key $PublicKey < plaintext.ext > ciphertext.ext
-./gmsmtk -sm2 dec -key $PrivateKey < ciphertext.ext > plaintext.ext
+<pre>./gmsmtk -acrypt enc -key $PublicKey < plaintext.ext > ciphertext.ext
+./gmsmtk -acrypt dec -key $PrivateKey < ciphertext.ext > plaintext.ext
 </pre>
 #### Symmetric encryption/decryption with SM4 block cipher:
 <pre>./gmsmtk -crypt -key $128bitkey < plaintext.ext > ciphertext.ext
