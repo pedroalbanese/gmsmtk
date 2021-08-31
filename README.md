@@ -134,7 +134,7 @@ Prevents data recovery using standard recovery tools.
 echo hexstring|./gmsmtk -hex dec
 </pre>
 #### Hex to PEM/PEM to Hex:
-<pre>echo $pubkey|./gmsmtk -pem enc [-pub "PUBLIC KEY;TYPE,ALG-RandA/B"] > Pubkey.pem
+<pre>echo $pubkey|./gmsmtk -pem enc [-pub "PUBLIC KEY;TYPE,RandA/B"] > Pubkey.pem
 ./gmsmtk -pem dec [-pub "PUBLIC KEY"] < Pubkey.pem
 </pre>
 #### TCP/IP Dump/Send:
