@@ -96,6 +96,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 <pre>./gmsmtk -sign -key $PrivateKey < file.ext > sign.txt
 sign=$(cat sign.txt)
 ./gmsmtk -verify -key $PublicKey -signature $sign < file.ext
+echo $?
 </pre>
 #### Asymmetric encryption/decryption with SM2 algorithm:
 <pre>./gmsmtk -sm2enc -key $PublicKey < plaintext.ext > ciphertext.ext
