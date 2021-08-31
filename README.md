@@ -107,10 +107,10 @@ sign=$(cat sign.txt)
 <pre>./gmsmtk -cmac -key $64bitkey < file.ext
 </pre>
 #### SM3 hashsum (list):
-<pre>./gmsmtk -hashsum "*.*" [-recursive]
+<pre>./gmsmtk -digest "*.*" [-recursive]
 </pre>
 #### SM3 hashsum (single):
-<pre>./gmsmtk -digest < file.ext
+<pre>./gmsmtk -digest - < file.ext
 </pre>
 #### HMAC-SM3 (hash-based message authentication code):
 <pre>./gmsmtk -hmac -key $128bitkey < file.ext
