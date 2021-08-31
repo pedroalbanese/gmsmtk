@@ -26,22 +26,20 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
   - [x] SM4 Encryption
 
 ### Usage:
-<pre> -acrypt string
-       Encrypt/Decrypt with asymmetric EC-SM2 algorithm.
- -bits int
+<pre> -bits int
        Bit-length. (for DERIVE, PBKDF2 and RAND) (default 128)
  -check string
        Check hashsum file. (- for STDIN)
  -cmac
        Cipher-based message authentication code.
  -crypt
-       Encrypt/Decrypt with SM4 block cipher.
+       Encrypt/Decrypt with SM4 symmetric block cipher.
  -derive string
        Derive shared secret key (SM2-ECDH) 128-bit default.
  -digest string
        Target file/wildcard to generate hashsum list. (- for STDIN)
  -hex string
-       Encode binary string to hex format and vice-versa.
+       Encode/Decode [e|d] binary string to hex format and vice-versa.
  -hmac
        Hash-based message authentication code.
  -iter int
@@ -55,7 +53,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
  -pbkdf2
        Password-based key derivation function.
  -pem string
-       Encode hex string to pem format and vice-versa.
+       Encode/Decode [e|d] hex string to pem format and vice-versa.
  -pub string
        Remote's side public key/remote's side public IP/PEM BLOCK.
  -rand
@@ -70,6 +68,10 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
        Sign with PrivateKey.
  -signature string
        Input signature. (for verification only)
+ -sm2dec
+       Decrypt with asymmetric EC-SM2 Privatekey.
+ -sm2enc
+       Encrypt with asymmetric EC-SM2 Publickey.
  -tcp string
        TCP/IP Transfer Protocol.
  -verbose
@@ -96,8 +98,8 @@ sign=$(cat sign.txt)
 ./gmsmtk -verify -key $PublicKey -signature $sign < file.ext
 </pre>
 #### Asymmetric encryption/decryption with SM2 algorithm:
-<pre>./gmsmtk -acrypt enc -key $PublicKey < plaintext.ext > ciphertext.ext
-./gmsmtk -acrypt dec -key $PrivateKey < ciphertext.ext > plaintext.ext
+<pre>./gmsmtk -sm2enc -key $PublicKey < plaintext.ext > ciphertext.ext
+./gmsmtk -sm2dec -key $PrivateKey < ciphertext.ext > plaintext.ext
 </pre>
 #### Symmetric encryption/decryption with SM4 block cipher:
 <pre>./gmsmtk -crypt -key $128bitkey < plaintext.ext > ciphertext.ext
