@@ -29,21 +29,22 @@ import (
 )
 
 var (
-	acrypt  = flag.String("acrypt", "", "Encrypt/Decrypt with asymmetric EC-SM2 algorithm.")
 	bit     = flag.Int("bits", 128, "Bit-length. (for DERIVE, PBKDF2 and RAND)")
 	check   = flag.String("check", "", "Check hashsum file. (- for STDIN)")
 	ciphmac = flag.Bool("cmac", false, "Cipher-based message authentication code.")
-	crypt   = flag.Bool("crypt", false, "Encrypt/Decrypt with SM4 block cipher.")
+	crypt   = flag.Bool("crypt", false, "Encrypt/Decrypt with SM4 symmetric block cipher.")
+	dec     = flag.Bool("sm2dec", false, "Decrypt with asymmetric EC-SM2 Privatekey.")
 	del     = flag.String("shred", "", "Files/Path/Wildcard to apply data sanitization method.")
 	derive  = flag.String("derive", "", "Derive shared secret key (SM2-ECDH) 128-bit default.")
+	enc     = flag.Bool("sm2enc", false, "Encrypt with asymmetric EC-SM2 Publickey.")
 	gen     = flag.Bool("keygen", false, "Generate asymmetric EC-SM2 keypair.")
-	hexenc  = flag.String("hex", "", "Encode binary string to hex format and vice-versa.")
+	hexenc  = flag.String("hex", "", "Encode/Decode [e|d] binary string to hex format and vice-versa.")
 	iter    = flag.Int("iter", 1, "Iterations. (for PBKDF2 and SHRED commands)")
 	key     = flag.String("key", "", "Private/Public key, Secret key or Password.")
 	mac     = flag.Bool("hmac", false, "Hash-based message authentication code.")
 	mode    = flag.String("mode", "CTR", "Mode of operation: CTR or OFB.")
 	pbkdf   = flag.Bool("pbkdf2", false, "Password-based key derivation function.")
-	pemenc  = flag.String("pem", "", "Encode hex string to pem format and vice-versa.")
+	pemenc  = flag.String("pem", "", "Encode/Decode [e|d] hex string to pem format and vice-versa.")
 	public  = flag.String("pub", "", "Remote's side public key/remote's side public IP/PEM BLOCK.")
 	random  = flag.Bool("rand", false, "Generate random cryptographic key.")
 	rec     = flag.Bool("recursive", false, "Process directories recursively.")
@@ -716,7 +717,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *acrypt == "enc" {
+	if *enc {
 		pub, err := ReadPublicKeyFromHex(*key)
 		if err != nil {
 			log.Fatal(err)
@@ -733,7 +734,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *acrypt == "dec" {
+	if *dec {
 		priv, err := ReadPrivateKeyFromHex(*key)
 		if err != nil {
 			log.Fatal(err)
