@@ -128,18 +128,18 @@ The PBKDF2 function can be combined with the CRYPT and HMAC commands:
 #### Shred (Data sanitization method, 25 iterations):
 <pre>./gmsmtk -shred keypair.ini -iter 25
 </pre>
-#### TCP/IP Dump/Send:
-<pre>./gmsmtk -tcp ip > PublicIP.txt
-./gmsmtk -tcp dump [-pub "8081"] > Pubkey.dat
-./gmsmtk -tcp send [-pub "127.0.0.1:8081"] < Pubkey.dat
-</pre>
 #### Hex to Bin/Bin to Hex:
 <pre>echo somestring|./gmsmtk -hex enc
 echo hexstring|./gmsmtk -hex dec
 </pre>
 #### Hex to PEM/PEM to Hex:
-<pre>echo $pubkey|./gmsmtk -pem enc [-pub "PEM BLOCK;TYPE,ALG"] > Pubkey.pem
-./gmsmtk -pem dec [-pub "PEM BLOCK"] < Pubkey.pem
+<pre>echo $pubkey|./gmsmtk -pem enc [-pub "PUBLIC KEY;TYPE,ALG-RandA/B"] > Pubkey.pem
+./gmsmtk -pem dec [-pub "PUBLIC KEY"] < Pubkey.pem
+</pre>
+#### TCP/IP Dump/Send:
+<pre>./gmsmtk -tcp ip > PublicIP.txt
+./gmsmtk -tcp dump [-pub "8081"] > Pubkey.pem
+./gmsmtk -tcp send [-pub "127.0.0.1:8081"] < Pubkey.pem
 </pre>
 #### Random Art (Public Key Fingerprint):
 <pre>./gmsmtk -key $pubkey
