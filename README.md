@@ -29,19 +29,15 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 <pre> -bits int
        Bit-length. (for DERIVE, PBKDF2 and RAND) (default 128)
  -check string
-       Check hashsum file.
+       Check hashsum file. (- for STDIN)
  -cmac
        Cipher-based message authentication code.
  -crypt
        Encrypt/Decrypt with SM4 block cipher.
- -decode
-       Decode hex string to binary format.
  -derive string
        Derive shared secret key (SM2-ECDH) 128-bit default.
- -digest
-       Compute single hashsum with SM3 algorithm.
- -hashsum string
-       Target file/wildcard to generate hashsum list.
+ -digest string
+       Target file/wildcard to generate hashsum list. (- for STDIN)
  -hex string
        Encode binary string to hex format and vice-versa.
  -hmac
@@ -59,7 +55,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
  -pem string
        Encode hex string to pem format and vice-versa.
  -pub string
-       Remote's side public key. (for shared key derivation)
+       Remote's side public key/remote's side public IP/PEM BLOCK.
  -rand
        Generate random cryptographic key.
  -recursive
@@ -72,10 +68,10 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
        Sign with PrivateKey.
  -signature string
        Input signature. (for verification only)
- -sm2dec
-       Encrypt with asymmetric EC-SM2 Publickey.
- -sm2enc
-       Decrypt with asymmetric EC-SM2 Privatekey.
+ -sm2 string
+       Encrypt/Decrypt with asymmetric EC-SM2 algorithm.
+ -tcp string
+       TCP/IP Transfer Protocol.
  -verbose
        Verbose mode. (for CHECK command)
  -verify
@@ -100,8 +96,8 @@ sign=$(cat sign.txt)
 ./gmsmtk -verify -key $PublicKey -signature $sign < file.ext
 </pre>
 #### Asymmetric encryption/decryption with SM2 algorithm:
-<pre>./gmsmtk -sm2enc -key $PublicKey < plaintext.ext > ciphertext.ext
-./gmsmtk -sm2dec -key $PrivateKey < ciphertext.ext > plaintext.ext
+<pre>./gmsmtk -sm2 enc -key $PublicKey < plaintext.ext > ciphertext.ext
+./gmsmtk -sm2 dec -key $PrivateKey < ciphertext.ext > plaintext.ext
 </pre>
 #### Symmetric encryption/decryption with SM4 block cipher:
 <pre>./gmsmtk -crypt -key $128bitkey < plaintext.ext > ciphertext.ext
@@ -131,8 +127,8 @@ The PBKDF2 function can be combined with the CRYPT and HMAC commands:
 <pre>./gmsmtk -shred keypair.ini -iter 25
 </pre>
 #### Hex to PEM/PEM to Hex:
-<pre>echo $pubkey|./gmsmtk -pem enc [-salt "PEM BLOCK;TYPE,ALG"] > Pubkey.pem
-./gmsmtk -pem dec [-salt "PEM BLOCK"] < Pubkey.pem
+<pre>echo $pubkey|./gmsmtk -pem enc [-pub "PEM BLOCK;TYPE,ALG"] > Pubkey.pem
+./gmsmtk -pem dec [-pub "PEM BLOCK"] < Pubkey.pem
 </pre>
 #### Random Art (Public Key Fingerprint):
 <pre>./gmsmtk -key $pubkey
