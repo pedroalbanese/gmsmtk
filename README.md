@@ -130,7 +130,7 @@ The PBKDF2 function can be combined with the CRYPT and HMAC commands:
 </pre>
 #### TCP/IP Dump/Send:
 <pre>./gmsmtk -tcp ip > PublicIP.txt
-/gmsmtk -tcp dump [-pub "8081"] > Pubkey.dat
+./gmsmtk -tcp dump [-pub "8081"] > Pubkey.dat
 ./gmsmtk -tcp send [-pub "127.0.0.1:8081"] < Pubkey.dat
 </pre>
 #### Hex to Bin/Bin to Hex:
