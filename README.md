@@ -73,7 +73,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
  -sm2enc
        Encrypt with asymmetric EC-SM2 Publickey.
  -tcp string
-       TCP/IP Transfer Protocol.
+       TCP/IP [dump|ip|send] Transfer Protocol.
  -verbose
        Verbose mode. (for CHECK command)
  -verify
@@ -129,7 +129,8 @@ The PBKDF2 function can be combined with the CRYPT and HMAC commands:
 <pre>./gmsmtk -shred keypair.ini -iter 25
 </pre>
 #### TCP/IP Dump/Send:
-<pre>./gmsmtk -tcp dump [-pub "8081"] > Pubkey.dat
+<pre>./gmsmtk -tcp ip > PublicIP.txt
+/gmsmtk -tcp dump [-pub "8081"] > Pubkey.dat
 ./gmsmtk -tcp send [-pub "127.0.0.1:8081"] < Pubkey.dat
 </pre>
 #### Hex to Bin/Bin to Hex:
