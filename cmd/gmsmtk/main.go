@@ -132,7 +132,7 @@ func main() {
 			if strings.Contains(name, ";") {
 				split := strings.Split(name, ";")
 				if len(split) < 2 {
-					fmt.Println("PEM encoding needs two signature separated by semicolon.")
+					fmt.Println("PEM encoding needs two pub values separated by semicolon.")
 					os.Exit(2)
 				}
 				if split[0] != "" {
@@ -192,7 +192,7 @@ func main() {
 			if strings.Contains(name, ";") {
 				split := strings.Split(name, ";")
 				if len(split) < 2 {
-					fmt.Println("PEM encoding needs two signature values by semicolon.")
+					fmt.Println("PEM encoding needs two pub values separated by semicolon.")
 					os.Exit(2)
 				}
 				if split[0] != "" {
