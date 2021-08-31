@@ -29,7 +29,7 @@ import (
 )
 
 var (
-	acrypt  = flag.String("sm2", "", "Encrypt/Decrypt with asymmetric EC-SM2 algorithm.")
+	acrypt  = flag.String("acrypt", "", "Encrypt/Decrypt with asymmetric EC-SM2 algorithm.")
 	bit     = flag.Int("bits", 128, "Bit-length. (for DERIVE, PBKDF2 and RAND)")
 	check   = flag.String("check", "", "Check hashsum file. (- for STDIN)")
 	ciphmac = flag.Bool("cmac", false, "Cipher-based message authentication code.")
