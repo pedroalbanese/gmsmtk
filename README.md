@@ -15,6 +15,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 * CMAC (Cipher-based message authentication code)
 * HMAC (Hash-based message authentication code)
 * PBKDF2 (Password-based key derivation function 2)
+* TLS 1.3 (Transfer Layer Security)
 
 #### TODO:
   - [X] SM2 ECDH
@@ -30,9 +31,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
        Bit-length. (for DERIVE, PBKDF2 and RAND) (default 128)
  -check string
        Check hashsum file. (- for STDIN)
- -cmac
-       Cipher-based message authentication code.
- -crypt
+ -crypt string
        Encrypt/Decrypt with SM4 symmetric block cipher.
  -derive string
        Derive shared secret key (SM2-ECDH) 128-bit default.
@@ -40,20 +39,18 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
        Target file/wildcard to generate hashsum list. (- for STDIN)
  -hex string
        Encode/Decode [e|d] binary string to hex format and vice-versa.
- -hmac
-       Hash-based message authentication code.
  -iter int
        Iterations. (for PBKDF2 and SHRED commands) (default 1)
  -key string
        Private/Public key, Secret key or Password.
- -keygen
-       Generate asymmetric EC-SM2 keypair.
+ -keygen string
+       Generate asymmetric EC-SM2 keypair or certificate.
+ -mac string
+       Compute Cipher-based/Hash-based message authentication code.
  -mode string
-       Mode of operation: CTR or OFB. (default "CTR")
+       Mode of operation: GCM, CTR or OFB. (default "GCM")
  -pbkdf2
        Password-based key derivation function.
- -pem string
-       Encode/Decode [e|d] hex string to pem format and vice-versa.
  -pub string
        Remote's side public key/remote's side public IP/PEM BLOCK.
  -rand
@@ -73,7 +70,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
  -sm2enc
        Encrypt with asymmetric EC-SM2 Publickey.
  -tcp string
-       TCP/IP [dump|ip|send] Transfer Protocol.
+       Encrypted TCP/IP [dump|ip|send] Transfer Protocol.
  -verbose
        Verbose mode. (for CHECK command)
  -verify
@@ -83,7 +80,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 
 ### Examples:
 #### Asymmetric SM2 keypair generation:
-<pre>./gmsmtk -keygen
+<pre>./gmsmtk -keygen keypair
 </pre>
 #### Derive shared secret key (SM2-ECDH):
 <pre>./gmsmtk -derive a -key $PrivateKeyB -pub $PublicKeyA [-salt RandA;RandB] [-bits 64|128|256]
@@ -103,11 +100,11 @@ echo $?
 ./gmsmtk -sm2dec -key $PrivateKey < ciphertext.ext > plaintext.ext
 </pre>
 #### Symmetric encryption/decryption with SM4 block cipher:
-<pre>./gmsmtk -crypt -key $128bitkey < plaintext.ext > ciphertext.ext
-./gmsmtk -crypt -key $128bitkey < ciphertext.ext > plaintext.ext
+<pre>./gmsmtk -crypt enc -key $128bitkey < plaintext.ext > ciphertext.ext
+./gmsmtk -crypt dec -key $128bitkey < ciphertext.ext > plaintext.ext
 </pre>
 #### CMAC-SM4 (cipher-based message authentication code):
-<pre>./gmsmtk -cmac -key $64bitkey < file.ext
+<pre>./gmsmtk -mac cmac -key $64bitkey < file.ext
 </pre>
 #### SM3 hashsum (list):
 <pre>./gmsmtk -digest "*.*" [-recursive]
@@ -116,7 +113,7 @@ echo $?
 <pre>./gmsmtk -digest - < file.ext
 </pre>
 #### HMAC-SM3 (hash-based message authentication code):
-<pre>./gmsmtk -hmac -key $128bitkey < file.ext
+<pre>./gmsmtk -mac hmac -key $128bitkey < file.ext
 </pre>
 #### PBKDF2 (password-based key derivation function 2):
 <pre>./gmsmtk -pbkdf2 -key "pass" -iter 10000 -salt "salt"
@@ -128,17 +125,13 @@ The PBKDF2 function can be combined with the CRYPT and HMAC commands:
 </pre>
 #### Shred (Data sanitization method, 25 iterations):
 ##### Prevents data recovery using standard recovery tools.
-<pre>./gmsmtk -shred keypair.ini -iter 25
+<pre>./gmsmtk -shred key.pem -iter 25
 </pre>
-#### Hex to Bin/Bin to Hex:
+#### Bin to Hex/Hex to Bin:
 <pre>echo somestring|./gmsmtk -hex enc
 echo hexstring|./gmsmtk -hex dec
 </pre>
-#### Hex to PEM/PEM to Hex:
-<pre>echo $pubkey|./gmsmtk -pem enc [-pub "PUBLIC KEY;TYPE,RandA/B"] > Pubkey.pem
-./gmsmtk -pem dec [-pub "PUBLIC KEY"] < Pubkey.pem
-</pre>
-#### TCP/IP Dump/Send:
+#### TLS TCP/IP Layer Dump/Send:
 <pre>./gmsmtk -tcp ip > PublicIP.txt
 ./gmsmtk -tcp dump [-pub "8081"] > Pubkey.pem
 ./gmsmtk -tcp send [-pub "127.0.0.1:8081"] < Pubkey.pem
