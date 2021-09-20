@@ -42,7 +42,8 @@ var (
 	del     = flag.String("shred", "", "Files/Path/Wildcard to apply data sanitization method.")
 	derive  = flag.String("derive", "", "Derive shared secret key (SM2-ECDH) 128-bit default.")
 	enc     = flag.Bool("sm2enc", false, "Encrypt with asymmetric EC-SM2 Publickey.")
-	gen     = flag.String("keygen", "", "Generate asymmetric EC-SM2 keypair or certificate.")
+	gen     = flag.Bool("keygen", false, "Generate asymmetric EC-SM2 keypair.")
+	crt     = flag.Bool("crtgen", false, "Generate EC-SM2 key and certificate for TLS connection.")
 	hexenc  = flag.String("hex", "", "Encode/Decode [e|d] binary string to hex format and vice-versa.")
 	iter    = flag.Int("iter", 1, "Iterations. (for PBKDF2 and SHRED commands)")
 	key     = flag.String("key", "", "Private/Public key, Secret key or Password.")
@@ -141,7 +142,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *gen == "cert" {
+	if *crt {
 		priv, err := sm2.GenerateKey(nil)
 		if err != nil {
 			log.Fatal(err)
@@ -211,7 +212,7 @@ func main() {
 				ExtraNames: []pkix.AttributeTypeAndValue{
 					{
 						Type:  []int{2, 5, 4, 42},
-						Value: "GMSMTk",
+						Value: *key,
 					},
 				},
 			},
@@ -223,8 +224,7 @@ func main() {
 
 			IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1).To4(), net.ParseIP("2001:4860:0:2001::68")},
 
-			PolicyIdentifiers:   []asn1.ObjectIdentifier{[]int{1, 2, 3}},
-			PermittedDNSDomains: []string{".example.com", "example.com"},
+			PolicyIdentifiers: []asn1.ObjectIdentifier{[]int{1, 2, 3}},
 
 			ExtraExtensions: []pkix.Extension{
 				{
@@ -647,7 +647,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *gen == "keypair" {
+	if *gen {
 		var err error
 		var prvRaw []byte
 		var priv *sm2.PrivateKey
