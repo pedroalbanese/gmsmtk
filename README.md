@@ -10,7 +10,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 * GCM: Galois/Counter Mode (AEAD)
 * CTR: Counter Mode
 * OFB: Output Feedback Mode
-* 
+
 #### Cryptographic Functions:
 * Asymmetric Encryption/Decryption
 * Symmetric Encryption/Decryption
