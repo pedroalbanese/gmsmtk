@@ -6,45 +6,49 @@ import (
 	"crypto/cipher"
 	"crypto/hmac"
 	"crypto/rand"
+	"crypto/x509/pkix"
+	"encoding/asn1"
 	"encoding/hex"
-	"encoding/pem"
 	"flag"
 	"fmt"
-	"github.com/pedroalbanese/cmac"
-	"github.com/pedroalbanese/gmsm/sm2"
-	"github.com/pedroalbanese/gmsm/sm3"
-	"github.com/pedroalbanese/gmsm/sm4"
-	"github.com/pedroalbanese/gmsmtk"
-	"github.com/pedroalbanese/go-external-ip"
-	"github.com/pedroalbanese/randomart"
-	"github.com/pedroalbanese/shred"
 	"golang.org/x/crypto/pbkdf2"
 	"io"
 	"io/ioutil"
 	"log"
+	"math/big"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
+
+	"github.com/pedroalbanese/cmac"
+	"github.com/pedroalbanese/gmsm/sm2"
+	"github.com/pedroalbanese/gmsm/sm3"
+	"github.com/pedroalbanese/gmsm/sm4"
+	"github.com/pedroalbanese/gmsm/x509"
+	"github.com/pedroalbanese/gmsmtk"
+	"github.com/pedroalbanese/gmtls"
+	"github.com/pedroalbanese/go-external-ip"
+	"github.com/pedroalbanese/randomart"
+	"github.com/pedroalbanese/shred"
 )
 
 var (
 	bit     = flag.Int("bits", 128, "Bit-length. (for DERIVE, PBKDF2 and RAND)")
 	check   = flag.String("check", "", "Check hashsum file. (- for STDIN)")
-	ciphmac = flag.Bool("cmac", false, "Cipher-based message authentication code.")
-	crypt   = flag.Bool("crypt", false, "Encrypt/Decrypt with SM4 symmetric block cipher.")
+	crypt   = flag.String("crypt", "", "Encrypt/Decrypt with SM4 symmetric block cipher.")
 	dec     = flag.Bool("sm2dec", false, "Decrypt with asymmetric EC-SM2 Privatekey.")
 	del     = flag.String("shred", "", "Files/Path/Wildcard to apply data sanitization method.")
 	derive  = flag.String("derive", "", "Derive shared secret key (SM2-ECDH) 128-bit default.")
 	enc     = flag.Bool("sm2enc", false, "Encrypt with asymmetric EC-SM2 Publickey.")
-	gen     = flag.Bool("keygen", false, "Generate asymmetric EC-SM2 keypair.")
+	gen     = flag.String("keygen", "", "Generate asymmetric EC-SM2 keypair or certificate.")
 	hexenc  = flag.String("hex", "", "Encode/Decode [e|d] binary string to hex format and vice-versa.")
 	iter    = flag.Int("iter", 1, "Iterations. (for PBKDF2 and SHRED commands)")
 	key     = flag.String("key", "", "Private/Public key, Secret key or Password.")
-	mac     = flag.Bool("hmac", false, "Hash-based message authentication code.")
-	mode    = flag.String("mode", "CTR", "Mode of operation: CTR or OFB.")
+	mac     = flag.String("mac", "", "Compute Cipher-based/Hash-based message authentication code.")
+	mode    = flag.String("mode", "GCM", "Mode of operation: GCM, CTR or OFB.")
 	pbkdf   = flag.Bool("pbkdf2", false, "Password-based key derivation function.")
-	pemenc  = flag.String("pem", "", "Encode/Decode [e|d] hex string to pem format and vice-versa.")
 	public  = flag.String("pub", "", "Remote's side public key/remote's side public IP/PEM BLOCK.")
 	random  = flag.Bool("rand", false, "Generate random cryptographic key.")
 	rec     = flag.Bool("recursive", false, "Process directories recursively.")
@@ -52,11 +56,25 @@ var (
 	sig     = flag.Bool("sign", false, "Sign with PrivateKey.")
 	sign    = flag.String("signature", "", "Input signature. (for verification only)")
 	target  = flag.String("digest", "", "Target file/wildcard to generate hashsum list. (- for STDIN)")
-	tcpip   = flag.String("tcp", "", "TCP/IP [dump|ip|send] Transfer Protocol.")
+	tcpip   = flag.String("tcp", "", "Encrypted TCP/IP [dump|ip|send] Transfer Protocol.")
 	verbose = flag.Bool("verbose", false, "Verbose mode. (for CHECK command)")
 	verify  = flag.Bool("verify", false, "Verify with PublicKey.")
 	version = flag.Bool("version", false, "Print version information.")
 )
+
+func publicKey(priv interface{}) interface{} {
+	switch k := priv.(type) {
+	case *sm2.PrivateKey:
+		return k.Public()
+	default:
+		return nil
+	}
+}
+
+func handleConnection(c net.Conn) {
+	log.Printf("Client(TLS) %v connected via secure channel.", c.RemoteAddr())
+	log.Printf("Connection from %v closed.", c.RemoteAddr())
+}
 
 func main() {
 	flag.Parse()
@@ -123,257 +141,181 @@ func main() {
 		os.Exit(0)
 	}
 
-	if (*pemenc == "e" || *pemenc == "enc" || *pemenc == "encode") && *key == "" {
-		var blc string
-		var typ string
-		blc = "PEM BLOCK"
-		typ = "-"
-		if *public != "" {
-			name := *public
-			if strings.Contains(name, ";") {
-				split := strings.Split(name, ";")
-				if len(split) < 2 {
-					fmt.Println("PEM encoding needs two pub values separated by semicolon.")
-					os.Exit(2)
-				}
-				if split[0] != "" {
-					blc = split[0]
-				}
-				typ = split[1]
-			} else {
-				blc = name
-			}
+	if *gen == "cert" {
+		priv, err := sm2.GenerateKey(nil)
+		if err != nil {
+			log.Fatal(err)
 		}
-		buf := bytes.NewBuffer(nil)
-		scanner := os.Stdin
-		io.Copy(buf, scanner)
-
-		block := &pem.Block{
-			Type: blc,
-			Headers: map[string]string{
-				"typ": typ,
+		privPem, err := x509.WritePrivateKeyToPem(priv, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pubKey, _ := priv.Public().(*sm2.PublicKey)
+		pubkeyPem, err := x509.WritePublicKeyToPem(pubKey)
+		privKey, err := x509.ReadPrivateKeyFromPem(privPem, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pubKey, err = x509.ReadPublicKeyFromPem(pubkeyPem)
+		if err != nil {
+			log.Fatal(err)
+		}
+		templateReq := x509.CertificateRequest{
+			Subject: pkix.Name{
+				CommonName:   "test.example.com",
+				Organization: []string{"Test"},
 			},
-			Bytes: []byte(buf.Bytes()),
 		}
-		if err := pem.Encode(os.Stdout, block); err != nil {
+		reqPem, err := x509.CreateCertificateRequestToPem(&templateReq, privKey)
+		if err != nil {
 			log.Fatal(err)
 		}
-		os.Exit(0)
-	}
-
-	if (*pemenc == "d" || *pemenc == "dec" || *pemenc == "decode") && *key == "" {
-		var blc string
-		blc = "PEM BLOCK"
-		if *public != "" {
-			blc = *public
+		req, err := x509.ReadCertificateRequestFromPem(reqPem)
+		if err != nil {
+			log.Fatal(err)
 		}
-		buf := bytes.NewBuffer(nil)
-		scanner := os.Stdin
-		io.Copy(buf, scanner)
-
-		block, _ := pem.Decode(buf.Bytes())
-
-		if block == nil || block.Type != blc {
-			log.Fatal("failed to decode PEM block containing " + blc)
-		}
-
-		pub, _ := hex.DecodeString(string(block.Bytes))
-
-		fmt.Printf("%x\n", pub)
-		os.Exit(0)
-	}
-
-	if (*pemenc == "e" || *pemenc == "enc" || *pemenc == "encode") && *key != "" {
-		var blc string
-		var typ string
-		blc = "PEM BLOCK"
-		typ = "-"
-		if *public != "" {
-			name := *public
-			if strings.Contains(name, ";") {
-				split := strings.Split(name, ";")
-				if len(split) < 2 {
-					fmt.Println("PEM encoding needs two pub values separated by semicolon.")
-					os.Exit(2)
-				}
-				if split[0] != "" {
-					blc = split[0]
-				}
-				typ = split[1]
-			} else {
-				blc = name
-			}
-		}
-		var keyHex string
-		var err error
-		var prvRaw []byte
-		if *pbkdf == true {
-			prvRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
-			keyHex = hex.EncodeToString(prvRaw)
+		err = req.CheckSignature()
+		if err != nil {
+			log.Fatalf("Request CheckSignature error:%v", err)
 		} else {
-			keyHex = *key
-		}
-		var key []byte
-		key, err = hex.DecodeString(keyHex)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if len(key) != 16 {
-			log.Fatal(err)
+			fmt.Printf("CheckSignature ok\n")
 		}
 
-		ciph, err := sm4.NewCipher(key)
-		if err != nil {
-			log.Fatal(err)
-		}
-		iv := make([]byte, 16)
-		var stream cipher.Stream
-		if *mode == "CTR" || *mode == "ctr" {
-			stream = cipher.NewCTR(ciph, iv)
-		} else if *mode == "OFB" || *mode == "ofb" {
-			stream = cipher.NewOFB(ciph, iv)
-		}
-
-		buf := make([]byte, 128*1<<10)
-		var n int
-		for {
-			n, err = os.Stdin.Read(buf)
-			if err != nil && err != io.EOF {
-				log.Fatal(err)
+		name := *public
+		var org string
+		var country string
+		if strings.Contains(name, ";") {
+			split := strings.Split(name, ";")
+			if len(split) < 2 {
+				fmt.Println("PEM encoding needs two pub values separated by semicolon.")
+				os.Exit(2)
 			}
-			stream.XORKeyStream(buf[:n], buf[:n])
-			if err == io.EOF {
-				break
+			if split[0] != "" {
+				org = split[0]
 			}
+			country = split[1]
+		} else {
+			org = name
+		}
 
-			block := &pem.Block{
-				Type: blc,
-				Headers: map[string]string{
-					"typ": typ,
+		consensus := externalip.DefaultConsensus(nil, nil)
+		ip, _ := consensus.ExternalIP()
+
+		extraExtensionData := []byte("extra extension")
+		template := x509.Certificate{
+			SerialNumber: big.NewInt(-1),
+			Subject: pkix.Name{
+				CommonName:   ip.String(),
+				Organization: []string{org},
+				Country:      []string{country},
+				ExtraNames: []pkix.AttributeTypeAndValue{
+					{
+						Type:  []int{2, 5, 4, 42},
+						Value: "GMSMTk",
+					},
 				},
-				Bytes: []byte(hex.EncodeToString(buf[:n])),
-			}
-			if err := pem.Encode(os.Stdout, block); err != nil {
-				log.Fatal(err)
-			}
-			os.Exit(0)
-		}
-		os.Exit(0)
-	}
+			},
+			NotBefore: time.Now(),
+			NotAfter:  time.Date(2021, time.October, 10, 12, 1, 1, 1, time.UTC),
 
-	if (*pemenc == "d" || *pemenc == "dec" || *pemenc == "decode") && *key != "" {
-		var blc string
-		blc = "PEM BLOCK"
-		if *public != "" {
-			blc = *public
-		}
-		buf := bytes.NewBuffer(nil)
-		scanner := os.Stdin
-		io.Copy(buf, scanner)
+			BasicConstraintsValid: true,
+			IsCA:                  true,
 
-		pemblock, _ := pem.Decode(buf.Bytes())
+			IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1).To4(), net.ParseIP("2001:4860:0:2001::68")},
 
-		if pemblock == nil || pemblock.Type != blc {
-			log.Fatal("failed to decode PEM block containing " + blc)
+			PolicyIdentifiers:   []asn1.ObjectIdentifier{[]int{1, 2, 3}},
+			PermittedDNSDomains: []string{".example.com", "example.com"},
+
+			ExtraExtensions: []pkix.Extension{
+				{
+					Id:    []int{1, 2, 3, 4},
+					Value: extraExtensionData,
+				},
+			},
 		}
 
-		pub, _ := hex.DecodeString(string(pemblock.Bytes))
-
-		var keyHex string
-		var err error
-		var prvRaw []byte
-		if *pbkdf == true {
-			prvRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
-			keyHex = hex.EncodeToString(prvRaw)
-		} else {
-			keyHex = *key
-		}
-		var key []byte
-		key, err = hex.DecodeString(keyHex)
+		pripem, err := x509.WritePrivateKeyToPem(priv, nil)
 		if err != nil {
 			log.Fatal(err)
 		}
-		if len(key) != 16 {
-			log.Fatal(err)
-		}
+		ioutil.WriteFile("key.pem", pripem, 0644)
 
-		ciph, err := sm4.NewCipher(key)
+		pubKey, _ = priv.Public().(*sm2.PublicKey)
+		certpem, err := x509.CreateCertificateToPem(&template, &template, pubKey, privKey)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("failed to create cert file")
 		}
-		iv := make([]byte, 16)
-		var stream cipher.Stream
-		if *mode == "CTR" || *mode == "ctr" {
-			stream = cipher.NewCTR(ciph, iv)
-		} else if *mode == "OFB" || *mode == "ofb" {
-			stream = cipher.NewOFB(ciph, iv)
-		}
-		stream.XORKeyStream(pub, pub)
-		fmt.Println(string(pub))
-		os.Exit(0)
+		ioutil.WriteFile("cert.crt", certpem, 0644)
 	}
 
 	if *tcpip == "dump" {
+		cert, err := gmtls.LoadX509KeyPair("cert.crt", "key.pem")
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		config := gmtls.Config{Certificates: []gmtls.Certificate{cert}, ClientAuth: gmtls.RequireAnyClientCert}
+		config.Rand = rand.Reader
+
 		port := "8081"
 		if *public != "" {
 			port = *public
 		}
-		ln, err := net.Listen("tcp", ":"+port)
+
+		ln, err := gmtls.Listen("tcp", ":"+port, &config)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			log.Fatal(err)
 		}
 
-		conn, err := ln.Accept()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+		fmt.Println("Server(TLS) up and listening on port " + port)
+
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			go handleConnection(conn)
+
+			var buf bytes.Buffer
+			io.Copy(&buf, conn)
+			text := strings.TrimSuffix(string(buf.Bytes()), "\n")
+			fmt.Println(text)
+			os.Exit(0)
 		}
-
-		defer ln.Close()
-
-		strRemoteAddr := conn.RemoteAddr()
-		strLocalAddr := conn.LocalAddr()
-		fmt.Fprint(os.Stderr, "Remote TCP address: ")
-		fmt.Fprintln(os.Stderr, strRemoteAddr)
-		fmt.Fprint(os.Stderr, "Local TCP address: ")
-		fmt.Fprintln(os.Stderr, strLocalAddr)
-
-		var buf bytes.Buffer
-		io.Copy(&buf, conn)
-		text := strings.TrimSuffix(string(buf.Bytes()), "\n")
-		fmt.Println(text)
-		os.Exit(0)
 	}
 
 	if *tcpip == "send" {
+		cert, err := gmtls.LoadX509KeyPair("cert.crt", "key.pem")
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		ipport := "127.0.0.1:8081"
 		if *public != "" {
 			ipport = *public
 		}
-		conn, err := net.Dial("tcp", ipport)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
 
-		strRemoteAddr := conn.RemoteAddr()
-		strLocalAddr := conn.LocalAddr()
-		fmt.Fprint(os.Stderr, "Remote TCP address: ")
-		fmt.Fprintln(os.Stderr, strRemoteAddr)
-		fmt.Fprint(os.Stderr, "Local TCP address: ")
-		fmt.Fprintln(os.Stderr, strLocalAddr)
+		log.Printf("Connecting to %s\n", ipport)
+
+		config := gmtls.Config{Certificates: []gmtls.Certificate{cert}, InsecureSkipVerify: true}
+		conn, err := gmtls.Dial("tcp", ipport, &config)
+
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		buf := bytes.NewBuffer(nil)
 		scanner := os.Stdin
 		io.Copy(buf, scanner)
 
 		text := string(buf.Bytes())
-
 		fmt.Fprintf(conn, text)
 
-		text = strings.TrimSuffix(string(buf.Bytes()), "\n")
-		fmt.Println(text)
+		defer conn.Close()
+
+		log.Printf("Connection established between %s and localhost.\n", conn.RemoteAddr().String())
 		os.Exit(0)
 	}
 
@@ -384,7 +326,104 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *crypt == true {
+	if *crypt == "enc" && *mode == "GCM" {
+		var keyHex string
+		var prvRaw []byte
+		if *pbkdf {
+			prvRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
+			keyHex = hex.EncodeToString(prvRaw)
+		} else {
+			keyHex = *key
+		}
+		var key []byte
+		var err error
+		if keyHex == "" {
+			key = make([]byte, 16)
+			_, err = io.ReadFull(rand.Reader, key)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Fprintln(os.Stderr, "Key=", hex.EncodeToString(key))
+		} else {
+			key, err = hex.DecodeString(keyHex)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if len(key) != 128/8 {
+				log.Fatal(err)
+			}
+		}
+
+		ciph, err := sm4.NewCipher(key)
+		aead, err := cipher.NewGCM(ciph)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		buf := bytes.NewBuffer(nil)
+		data := os.Stdin
+		io.Copy(buf, data)
+		msg := buf.Bytes()
+
+		nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(msg)+aead.Overhead())
+
+		out := aead.Seal(nonce, nonce, msg, nil)
+		fmt.Printf("%s", out)
+
+		os.Exit(0)
+	}
+
+	if *crypt == "dec" && *mode == "GCM" {
+		var keyHex string
+		var prvRaw []byte
+		if *pbkdf {
+			prvRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
+			keyHex = hex.EncodeToString(prvRaw)
+		} else {
+			keyHex = *key
+		}
+		var key []byte
+		var err error
+		if keyHex == "" {
+			key = make([]byte, 16)
+			_, err = io.ReadFull(rand.Reader, key)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Fprintln(os.Stderr, "Key=", hex.EncodeToString(key))
+		} else {
+			key, err = hex.DecodeString(keyHex)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if len(key) != 128/8 {
+				log.Fatal(err)
+			}
+		}
+
+		ciph, err := sm4.NewCipher(key)
+		aead, err := cipher.NewGCM(ciph)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		buf := bytes.NewBuffer(nil)
+		data := os.Stdin
+		io.Copy(buf, data)
+		msg := buf.Bytes()
+
+		nonce, msg := msg[:aead.NonceSize()], msg[aead.NonceSize():]
+
+		out, err := aead.Open(nil, nonce, msg, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%s", out)
+
+		os.Exit(0)
+	}
+
+	if *crypt != "" && *mode != "GCM" {
 		var keyHex string
 		var prvRaw []byte
 		if *pbkdf == true {
@@ -440,7 +479,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *ciphmac == true {
+	if *mac == "cmac" {
 		var keyHex string
 		var prvRaw []byte
 		if *pbkdf == true {
@@ -460,7 +499,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *mac == true {
+	if *mac == "hmac" {
 		var keyHex string
 		var prvRaw []byte
 		if *pbkdf == true {
@@ -608,7 +647,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *gen == true {
+	if *gen == "keypair" {
 		var err error
 		var prvRaw []byte
 		var priv *sm2.PrivateKey
@@ -807,15 +846,15 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *pbkdf == true && *crypt == false && *mac == false && (*bit == 256 || *bit == 128 || *bit == 64) {
+	if *pbkdf == true && *crypt == "" && *mac == "" && (*bit == 256 || *bit == 128 || *bit == 64) {
 		prvRaw := pbkdf2.Key([]byte(*key), []byte(*salt), *iter, *bit/8, sm3.New)
 		fmt.Println(hex.EncodeToString(prvRaw))
 		os.Exit(0)
 	}
 
-	if *key == "-" {
+	if *key != "" && *key == "-" {
 		fmt.Println(randomart.FromFile(os.Stdin))
-	} else {
+	} else if *key != "" && *key != "-" {
 		fmt.Println(randomart.FromString(*key))
 	}
 }
