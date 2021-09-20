@@ -37,7 +37,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
  -check string
        Check hashsum file. (- for STDIN)
  -crtgen
-       Generate EC-SM2 key and certificate to TLS.
+       Generate EC-SM2 key and certificate for TLS connection.
  -crypt string
        Encrypt/Decrypt with SM4 symmetric block cipher.
  -derive string
