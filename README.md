@@ -139,7 +139,7 @@ The PBKDF2 function can be combined with the CRYPT and HMAC commands:
 echo hexstring|./gmsmtk -hex dec
 </pre>
 #### TLS TCP/IP Layer Dump/Send:
-<pre>./gmsmtk -crtgen
+<pre>./gmsmtk -crtgen [-pub "ORGANIZATION;Country"]
 ./gmsmtk -tcp ip > PublicIP.txt
 ./gmsmtk -tcp dump [-pub "8081"] > cert.crt
 ./gmsmtk -tcp send [-pub "127.0.0.1:8081"] < cert.crt
