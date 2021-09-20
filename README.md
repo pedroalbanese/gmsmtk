@@ -6,6 +6,11 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 * GM/T 0004-2012 - SM3 Message digest algorithm. 256-bit hash value.
 * GM/T 0002-2012 - SM4 Symmetric block cipher with 128-bit key.
 
+#### Modes of operation:
+* GCM: Galois/Counter Mode (AEAD)
+* CTR: Counter Mode
+* OFB: Output Feedback Mode
+* 
 #### Cryptographic Functions:
 * Asymmetric Encryption/Decryption
 * Symmetric Encryption/Decryption
