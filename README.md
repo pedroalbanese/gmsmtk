@@ -36,6 +36,8 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
        Bit-length. (for DERIVE, PBKDF2 and RAND) (default 128)
  -check string
        Check hashsum file. (- for STDIN)
+ -crtgen
+       Generate EC-SM2 key and certificate to TLS.
  -crypt string
        Encrypt/Decrypt with SM4 symmetric block cipher.
  -derive string
@@ -48,8 +50,8 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
        Iterations. (for PBKDF2 and SHRED commands) (default 1)
  -key string
        Private/Public key, Secret key or Password.
- -keygen string
-       Generate asymmetric EC-SM2 keypair or certificate.
+ -keygen
+       Generate asymmetric EC-SM2 keypair.
  -mac string
        Compute Cipher-based/Hash-based message authentication code.
  -mode string
@@ -85,7 +87,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 
 ### Examples:
 #### Asymmetric SM2 keypair generation:
-<pre>./gmsmtk -keygen keypair
+<pre>./gmsmtk -keygen
 </pre>
 #### Derive shared secret key (SM2-ECDH):
 <pre>./gmsmtk -derive a -key $PrivateKeyB -pub $PublicKeyA [-salt RandA;RandB] [-bits 64|128|256]
@@ -137,7 +139,7 @@ The PBKDF2 function can be combined with the CRYPT and HMAC commands:
 echo hexstring|./gmsmtk -hex dec
 </pre>
 #### TLS TCP/IP Layer Dump/Send:
-<pre>./gmsmtk -keygen cert
+<pre>./gmsmtk -crtgen
 ./gmsmtk -tcp ip > PublicIP.txt
 ./gmsmtk -tcp dump [-pub "8081"] > cert.crt
 ./gmsmtk -tcp send [-pub "127.0.0.1:8081"] < cert.crt
