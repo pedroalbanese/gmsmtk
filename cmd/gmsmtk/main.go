@@ -246,6 +246,7 @@ func main() {
 			log.Fatal("failed to create cert file")
 		}
 		ioutil.WriteFile("cert.crt", certpem, 0644)
+		os.Exit(0)
 	}
 
 	if *tcpip == "dump" {
