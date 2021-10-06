@@ -23,6 +23,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 * TLS 1.2 (Transfer Layer Security)
 
 #### TODO:
+  - [X] SM2 TLS
   - [X] SM2 ECDH
   - [X] SM2 ECDSA
   - [X] SM2 Encryption
@@ -36,8 +37,6 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
        Bit-length. (for DERIVE, PBKDF2 and RAND) (default 128)
  -check string
        Check hashsum file. (- for STDIN)
- -crtgen
-       Generate EC-SM2 key and certificate for TLS connection.
  -crypt string
        Encrypt/Decrypt with SM4 symmetric block cipher.
  -derive string
@@ -139,8 +138,7 @@ The PBKDF2 function can be combined with the CRYPT and HMAC commands:
 echo hexstring|./gmsmtk -hex dec
 </pre>
 #### TLS TCP/IP Layer Dump/Send:
-<pre>./gmsmtk -crtgen [-pub "ORGANIZATION;Country"]
-./gmsmtk -tcp ip > PublicIP.txt
+<pre>./gmsmtk -tcp ip > PublicIP.txt
 ./gmsmtk -tcp dump [-pub "8081"] > cert.crt
 ./gmsmtk -tcp send [-pub "127.0.0.1:8081"] < cert.crt
 </pre>
