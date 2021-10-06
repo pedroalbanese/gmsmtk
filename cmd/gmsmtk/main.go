@@ -43,7 +43,6 @@ var (
 	derive  = flag.String("derive", "", "Derive shared secret key (SM2-ECDH) 128-bit default.")
 	enc     = flag.Bool("sm2enc", false, "Encrypt with asymmetric EC-SM2 Publickey.")
 	gen     = flag.Bool("keygen", false, "Generate asymmetric EC-SM2 keypair.")
-	crt     = flag.Bool("crtgen", false, "Generate EC-SM2 key and certificate for TLS connection.")
 	hexenc  = flag.String("hex", "", "Encode/Decode [e|d] binary string to hex format and vice-versa.")
 	iter    = flag.Int("iter", 1, "Iterations. (for PBKDF2 and SHRED commands)")
 	key     = flag.String("key", "", "Private/Public key, Secret key or Password.")
@@ -142,7 +141,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *crt {
+	if *tcpip == "dump" || *tcpip == "send" {
 		priv, err := sm2.GenerateKey(nil)
 		if err != nil {
 			log.Fatal(err)
@@ -182,23 +181,6 @@ func main() {
 			fmt.Printf("CheckSignature ok\n")
 		}
 
-		name := *public
-		var org string
-		var country string
-		if strings.Contains(name, ";") {
-			split := strings.Split(name, ";")
-			if len(split) < 2 {
-				fmt.Println("PEM encoding needs two pub values separated by semicolon.")
-				os.Exit(2)
-			}
-			if split[0] != "" {
-				org = split[0]
-			}
-			country = split[1]
-		} else {
-			org = name
-		}
-
 		consensus := externalip.DefaultConsensus(nil, nil)
 		ip, _ := consensus.ExternalIP()
 
@@ -206,9 +188,7 @@ func main() {
 		template := x509.Certificate{
 			SerialNumber: big.NewInt(-1),
 			Subject: pkix.Name{
-				CommonName:   ip.String(),
-				Organization: []string{org},
-				Country:      []string{country},
+				CommonName: ip.String(),
 				ExtraNames: []pkix.AttributeTypeAndValue{
 					{
 						Type:  []int{2, 5, 4, 42},
@@ -238,86 +218,83 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		ioutil.WriteFile("key.pem", pripem, 0644)
 
 		pubKey, _ = priv.Public().(*sm2.PublicKey)
 		certpem, err := x509.CreateCertificateToPem(&template, &template, pubKey, privKey)
 		if err != nil {
 			log.Fatal("failed to create cert file")
 		}
-		ioutil.WriteFile("cert.crt", certpem, 0644)
-		os.Exit(0)
-	}
 
-	if *tcpip == "dump" {
-		cert, err := gmtls.LoadX509KeyPair("cert.crt", "key.pem")
+		if *tcpip == "dump" {
+			cert, err := gmtls.X509KeyPair(certpem, pripem)
 
-		if err != nil {
-			log.Fatal(err)
-		}
-		config := gmtls.Config{Certificates: []gmtls.Certificate{cert}, ClientAuth: gmtls.RequireAnyClientCert}
-		config.Rand = rand.Reader
-
-		port := "8081"
-		if *public != "" {
-			port = *public
-		}
-
-		ln, err := gmtls.Listen("tcp", ":"+port, &config)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Println("Server(TLS) up and listening on port " + port)
-
-		for {
-			conn, err := ln.Accept()
 			if err != nil {
-				log.Println(err)
-				continue
+				log.Fatal(err)
 			}
-			go handleConnection(conn)
+			config := gmtls.Config{Certificates: []gmtls.Certificate{cert}, ClientAuth: gmtls.RequireAnyClientCert}
+			config.Rand = rand.Reader
 
-			var buf bytes.Buffer
-			io.Copy(&buf, conn)
-			text := strings.TrimSuffix(string(buf.Bytes()), "\n")
-			fmt.Println(text)
+			port := "8081"
+			if *public != "" {
+				port = *public
+			}
+
+			ln, err := gmtls.Listen("tcp", ":"+port, &config)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Println("Server(TLS) up and listening on port " + port)
+
+			for {
+				conn, err := ln.Accept()
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				go handleConnection(conn)
+
+				var buf bytes.Buffer
+				io.Copy(&buf, conn)
+				text := strings.TrimSuffix(string(buf.Bytes()), "\n")
+				fmt.Println(text)
+				os.Exit(0)
+			}
+		}
+
+		if *tcpip == "send" {
+			cert, err := gmtls.X509KeyPair(certpem, pripem)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			ipport := "127.0.0.1:8081"
+			if *public != "" {
+				ipport = *public
+			}
+
+			log.Printf("Connecting to %s\n", ipport)
+
+			config := gmtls.Config{Certificates: []gmtls.Certificate{cert}, InsecureSkipVerify: true}
+			conn, err := gmtls.Dial("tcp", ipport, &config)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			buf := bytes.NewBuffer(nil)
+			scanner := os.Stdin
+			io.Copy(buf, scanner)
+
+			text := string(buf.Bytes())
+			fmt.Fprintf(conn, text)
+
+			defer conn.Close()
+
+			log.Printf("Connection established between %s and localhost.\n", conn.RemoteAddr().String())
 			os.Exit(0)
 		}
-	}
-
-	if *tcpip == "send" {
-		cert, err := gmtls.LoadX509KeyPair("cert.crt", "key.pem")
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		ipport := "127.0.0.1:8081"
-		if *public != "" {
-			ipport = *public
-		}
-
-		log.Printf("Connecting to %s\n", ipport)
-
-		config := gmtls.Config{Certificates: []gmtls.Certificate{cert}, InsecureSkipVerify: true}
-		conn, err := gmtls.Dial("tcp", ipport, &config)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		buf := bytes.NewBuffer(nil)
-		scanner := os.Stdin
-		io.Copy(buf, scanner)
-
-		text := string(buf.Bytes())
-		fmt.Fprintf(conn, text)
-
-		defer conn.Close()
-
-		log.Printf("Connection established between %s and localhost.\n", conn.RemoteAddr().String())
-		os.Exit(0)
 	}
 
 	if *tcpip == "ip" {
