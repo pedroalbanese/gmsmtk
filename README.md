@@ -20,10 +20,9 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 * CMAC (Cipher-based message authentication code)
 * HMAC (Hash-based message authentication code)
 * PBKDF2 (Password-based key derivation function 2)
-* TLS (Transfer Layer Security)
+* TLS (Transport Layer Security)
 
 #### TODO:
-  - [X] SM2 TLS
   - [X] SM2 ECDH
   - [X] SM2 ECDSA
   - [X] SM2 Encryption
