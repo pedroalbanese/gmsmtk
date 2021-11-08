@@ -2,6 +2,8 @@
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](https://github.com/pedroalbanese/gmsmtk/blob/master/LICENSE.md) 
 [![GoDoc](https://godoc.org/github.com/pedroalbanese/gmsmtk?status.png)](http://godoc.org/github.com/pedroalbanese/gmsmtk)
 [![Go Report Card](https://goreportcard.com/badge/github.com/pedroalbanese/gmsmtk)](https://goreportcard.com/report/github.com/pedroalbanese/gmsmtk)
+[![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/pedroalbanese/gmsmtk)](https://golang.org)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/pedroalbanese/gmsmtk)](https://github.com/pedroalbanese/gmsmtk/releases)
 
 Multi purpose cross-platform cryptography tool for asymmetric/symmetric encryption, digital signature, cipher-based message authentication code (CMAC), hash digest, hash-based message authentication code (HMAC) and PBKDF2 function.
 
