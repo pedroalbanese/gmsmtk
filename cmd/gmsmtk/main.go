@@ -28,10 +28,10 @@ import (
 	"github.com/pedroalbanese/gmsm/sm4"
 	"github.com/pedroalbanese/gmsm/x509"
 	"github.com/pedroalbanese/gmsmtk"
-	"github.com/pedroalbanese/gmtls"
 	"github.com/pedroalbanese/go-external-ip"
 	"github.com/pedroalbanese/randomart"
 	"github.com/pedroalbanese/shred"
+	"github.com/tjfoc/gmtls"
 )
 
 var (
