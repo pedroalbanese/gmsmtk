@@ -28,16 +28,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 * PBKDF2 (Password-based key derivation function 2)
 * TLS (Transport Layer Security)
 
-#### TODO:
-  - [X] SM2 ECDH
-  - [X] SM2 ECDSA
-  - [X] SM2 Encryption
-  - [x] SM3 HMAC
-  - [x] SM3 Message Digest
-  - [x] SM4 CMAC
-  - [x] SM4 Encryption
-
-### Usage:
+### Usage 用法:
 <pre> -bits int
        Bit-length. (for DERIVE, PBKDF2 and RAND) (default 128)
  -check string
