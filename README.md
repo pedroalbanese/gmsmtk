@@ -126,8 +126,8 @@ The PBKDF2 function can be combined with the CRYPT and HMAC commands:
 ./gmsmtk -hmac -pbkdf2 -key "pass" -iter 10000 -salt "salt" < file.ext
 </pre>
 #### Shred (Data sanitization method, 25 iterations):
-##### Prevents data recovery using standard recovery tools.
-<pre>./gmsmtk -shred key.pem -iter 25
+Prevents data recovery using standard recovery tools.
+<pre>./gmsmtk -shred "keypair.ini" -iter 25
 </pre>
 #### Bin to Hex/Hex to Bin:
 <pre>echo somestring|./gmsmtk -hex enc
