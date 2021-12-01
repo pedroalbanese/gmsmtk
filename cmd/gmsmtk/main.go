@@ -27,12 +27,13 @@ import (
 	"github.com/pedroalbanese/gmsm/sm3"
 	"github.com/pedroalbanese/gmsm/sm4"
 	"github.com/pedroalbanese/gmsm/x509"
-	"github.com/pedroalbanese/gmsmtk"
+	"github.com/pedroalbanese/gmtls"
 	"github.com/pedroalbanese/go-external-ip"
 	"github.com/pedroalbanese/randomart"
 	"github.com/pedroalbanese/shred"
-	"github.com/tjfoc/gmtls"
 )
+
+const Version = "1.2.0"
 
 var (
 	bit     = flag.Int("bits", 128, "Bit-length. (for DERIVE, PBKDF2 and RAND)")
@@ -86,7 +87,7 @@ func main() {
 	}
 
 	if *version {
-		fmt.Println(gmsmtk.Version)
+		fmt.Println(Version)
 		return
 	}
 
