@@ -57,7 +57,7 @@ var (
 	sig     = flag.Bool("sign", false, "Sign with PrivateKey.")
 	sign    = flag.String("signature", "", "Input signature. (for verification only)")
 	target  = flag.String("digest", "", "Target file/wildcard to generate hashsum list. (- for STDIN)")
-	tcpip   = flag.String("tcp", "", "Encrypted TCP/IP [dump|ip|send] Transfer Protocol.")
+	tcpip   = flag.String("tcp", "", "Encrypted TCP/IP Transfer Protocol. [dump|send|ip|listen|dial]")
 	verbose = flag.Bool("verbose", false, "Verbose mode. (for CHECK command)")
 	verify  = flag.Bool("verify", false, "Verify with PublicKey.")
 	version = flag.Bool("version", false, "Print version information.")
