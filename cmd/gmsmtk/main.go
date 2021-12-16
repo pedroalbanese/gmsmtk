@@ -142,7 +142,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *tcpip == "dump" || *tcpip == "send" {
+	if *tcpip == "dump" || *tcpip == "send" || *tcpip == "listen" || *tcpip == "dial" {
 		priv, err := sm2.GenerateKey(nil)
 		if err != nil {
 			log.Fatal(err)
@@ -263,6 +263,48 @@ func main() {
 			}
 		}
 
+		if *tcpip == "listen" {
+			cert, err := gmtls.X509KeyPair(certpem, pripem)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+			config := gmtls.Config{Certificates: []gmtls.Certificate{cert}, ClientAuth: gmtls.RequireAnyClientCert}
+			config.Rand = rand.Reader
+
+			port := "8081"
+			if *public != "" {
+				port = *public
+			}
+
+			ln, err := gmtls.Listen("tcp", ":"+port, &config)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Fprintln(os.Stderr, "Server(TLS) up and listening on port "+port)
+
+			conn, err := ln.Accept()
+			if err != nil {
+				log.Println(err)
+			}
+			defer ln.Close()
+
+			fmt.Println("Connection accepted")
+
+			for {
+				message, err := bufio.NewReader(conn).ReadString('\n')
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(3)
+				}
+				fmt.Print("Received: ", string(message))
+
+				newmessage := strings.ToUpper(message)
+				conn.Write([]byte(newmessage + "\n"))
+			}
+		}
+
 		if *tcpip == "send" {
 			cert, err := gmtls.X509KeyPair(certpem, pripem)
 
@@ -295,6 +337,54 @@ func main() {
 
 			log.Printf("Connection established between %s and localhost.\n", conn.RemoteAddr().String())
 			os.Exit(0)
+		}
+
+		if *tcpip == "dial" {
+			cert, err := gmtls.X509KeyPair(certpem, pripem)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			ipport := "127.0.0.1:8081"
+			if *public != "" {
+				ipport = *public
+			}
+
+			config := gmtls.Config{Certificates: []gmtls.Certificate{cert}, InsecureSkipVerify: true}
+			conn, err := gmtls.Dial("tcp", ipport, &config)
+			if err != nil {
+				log.Fatal(err)
+			}
+			certs := conn.ConnectionState().PeerCertificates
+			for _, cert := range certs {
+				fmt.Printf("Issuer Name: %s\n", cert.Issuer)
+				fmt.Printf("Expiry: %s \n", cert.NotAfter.Format("Monday, 02-Jan-06 15:04:05 MST"))
+				fmt.Printf("Common Name: %s \n", cert.Issuer.CommonName)
+				fmt.Printf("IP Address: %s \n", cert.IPAddresses)
+			}
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer conn.Close()
+
+			for {
+				reader := bufio.NewReader(os.Stdin)
+				fmt.Print("Text to be sent: ")
+				text, err := reader.ReadString('\n')
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(3)
+				}
+				fmt.Fprintf(conn, text+"\n")
+
+				message, err := bufio.NewReader(conn).ReadString('\n')
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(3)
+				}
+				fmt.Print("Server response: " + message)
+			}
 		}
 	}
 
