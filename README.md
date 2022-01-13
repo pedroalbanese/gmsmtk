@@ -146,4 +146,4 @@ echo hexstring|./gmsmtk -hex dec
 
 This project is licensed under the ISC License.
 
-##### Commercial Grade Reliability. Copyright (c) 2020-2021 ALBANESE 研究实验室.
+##### Industrial-Grade Reliability. Copyright (c) 2020-2021 ALBANESE 研究实验室.
