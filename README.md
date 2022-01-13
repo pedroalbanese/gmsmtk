@@ -27,7 +27,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 * CMAC (Cipher-based message authentication code)
 * HMAC (Hash-based message authentication code)
 * PBKDF2 (Password-based key derivation function 2)
-* TLS (Transport Layer Security)
+* TLS 1.2 (Transport Layer Security)
 
 ### Usage 用法:
 <pre> -bits int
