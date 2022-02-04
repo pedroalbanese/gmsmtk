@@ -9,7 +9,7 @@
 Multi purpose cross-platform cryptography tool for asymmetric/symmetric encryption, digital signature, cipher-based message authentication code (CMAC), hash digest, hash-based message authentication code (HMAC) and PBKDF2 function.
 
 #### SM2/SM3/SM4 Chinese National Standard Algorithms:
-* GM/T 0001-2012 - ZUC (Zu Chongzhi Cipher) stream cipher
+* GM/T 0001-2012 - ZUC Zu Chongzhi stream cipher
 * GM/T 0003-2012 - SM2 Public key algorithm 256-bit.
 * GM/T 0004-2012 - SM3 Message digest algorithm. 256-bit hash value.
 * GM/T 0002-2012 - SM4 Symmetric block cipher with 128-bit key.
