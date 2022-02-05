@@ -1,6 +1,6 @@
 module github.com/pedroalbanese/gmsmtk
 
-go 1.12
+go 1.13
 
 require (
 	github.com/pedroalbanese/cmac v0.0.0-20210429130952-a58975ec8f4c
