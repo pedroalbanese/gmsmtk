@@ -116,6 +116,7 @@ echo $?
 </pre>
 #### MAC-EIA3 (3GPP message authentication code):
 <pre>./gmsmtk -mac eia3 -key $128bitkey < file.ext
+./gmsmtk -mac eia3 -key $128bitkey -signature $32bitmac < file.ext
 </pre>
 #### SM3 hashsum (list):
 <pre>./gmsmtk -digest "*.*" [-recursive]
