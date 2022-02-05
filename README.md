@@ -110,6 +110,13 @@ echo $?
 #### CMAC-SM4 (cipher-based message authentication code):
 <pre>./gmsmtk -mac cmac -key $64bitkey < file.ext
 </pre>
+#### Symmetric encryption/decryption with ZUC stream cipher:
+<pre>./gmsmtk -crypt eea3 -key $128bitkey < plaintext.ext > ciphertext.ext
+./gmsmtk -crypt eea3 -key $128bitkey < ciphertext.ext > plaintext.ext
+</pre>
+#### MAC-EIA3 (3GPP message authentication code):
+<pre>./gmsmtk -mac eia3 -key $128bitkey < file.ext
+</pre>
 #### SM3 hashsum (list):
 <pre>./gmsmtk -digest "*.*" [-recursive]
 </pre>
