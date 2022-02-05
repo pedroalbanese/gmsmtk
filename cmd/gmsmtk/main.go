@@ -31,13 +31,16 @@ import (
 	"github.com/pedroalbanese/go-external-ip"
 	"github.com/pedroalbanese/randomart"
 	"github.com/pedroalbanese/shred"
+	"github.com/pedroalbanese/zuc"
+	"github.com/pedroalbanese/zuc/eea3"
+	"github.com/pedroalbanese/zuc/eia3"
 )
 
-const Version = "1.2.0"
+const Version = "1.2.1"
 
 var (
 	bit     = flag.Int("bits", 128, "Bit-length. (for DERIVE, PBKDF2 and RAND)")
-	check   = flag.String("check", "", "Check hashsum file. (- for STDIN)")
+	check   = flag.String("check", "", "Check hashsum file. ('-' for STDIN)")
 	crypt   = flag.String("crypt", "", "Encrypt/Decrypt with SM4 symmetric block cipher.")
 	dec     = flag.Bool("sm2dec", false, "Decrypt with asymmetric EC-SM2 Privatekey.")
 	del     = flag.String("shred", "", "Files/Path/Wildcard to apply data sanitization method.")
@@ -56,7 +59,7 @@ var (
 	salt    = flag.String("salt", "", "Salt. (for PBKDF2)")
 	sig     = flag.Bool("sign", false, "Sign with PrivateKey.")
 	sign    = flag.String("signature", "", "Input signature. (for verification only)")
-	target  = flag.String("digest", "", "Target file/wildcard to generate hashsum list. (- for STDIN)")
+	target  = flag.String("digest", "", "Target file/wildcard to generate hashsum list. ('-' for STDIN)")
 	tcpip   = flag.String("tcp", "", "Encrypted TCP/IP Transfer Protocol. [dump|send|ip|listen|dial]")
 	verbose = flag.Bool("verbose", false, "Verbose mode. (for CHECK command)")
 	verify  = flag.Bool("verify", false, "Verify with PublicKey.")
@@ -392,6 +395,137 @@ func main() {
 		consensus := externalip.DefaultConsensus(nil, nil)
 		ip, _ := consensus.ExternalIP()
 		fmt.Println(ip.String())
+		os.Exit(0)
+	}
+
+	if *crypt == "eea3" {
+		var keyHex string
+		var keyRaw []byte
+		var err error
+		if *pbkdf {
+			keyRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
+			keyHex = hex.EncodeToString(keyRaw)
+		} else {
+			keyHex = *key
+		}
+		var key []byte
+		if keyHex == "" {
+			key = make([]byte, 16)
+			_, err = io.ReadFull(rand.Reader, key)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Fprintln(os.Stderr, "Key=", hex.EncodeToString(key))
+		} else {
+			key, err = hex.DecodeString(keyHex)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if len(key) != 16 {
+				log.Fatal(err)
+			}
+		}
+
+		ciph := eea3.NewEEA3(key, 0x2738cdaa, 0x1a, zuc.KEY_UPLINK)
+
+		buf := bytes.NewBuffer(nil)
+		data := os.Stdin
+		io.Copy(buf, data)
+		msg := buf.Bytes()
+
+		var length uint32
+		length = uint32(len(msg))
+		t := ciph.Encrypt(msg, length*8)
+		fmt.Printf("%s", string(t))
+
+		os.Exit(0)
+	}
+
+	if *mac == "eia3" && *sign == "" {
+		buf := bytes.NewBuffer(nil)
+		data := os.Stdin
+		io.Copy(buf, data)
+		msg := buf.Bytes()
+
+		var keyHex string
+		var prvRaw []byte
+		if *pbkdf {
+			prvRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
+			keyHex = hex.EncodeToString(prvRaw)
+		} else {
+			keyHex = *key
+		}
+		var key []byte
+		var err error
+		if keyHex == "" {
+			key = make([]byte, 16)
+			_, err = io.ReadFull(rand.Reader, key)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Fprintln(os.Stderr, "Key=", hex.EncodeToString(key))
+		} else {
+			key, err = hex.DecodeString(keyHex)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if len(key) != 16 {
+				log.Fatal(err)
+			}
+		}
+
+		ciph := eia3.NewEIA3([]byte(key), 0x2738cdaa, 0x1a, zuc.KEY_UPLINK)
+
+		var length uint32
+		length = uint32(len(msg))
+		t := ciph.Hash([]byte(msg), length*8)
+		fmt.Printf("%x\n", t)
+		os.Exit(0)
+	}
+
+	if *mac == "eia3" && *sign != "" {
+		buf := bytes.NewBuffer(nil)
+		data := os.Stdin
+		io.Copy(buf, data)
+		msg := buf.Bytes()
+
+		var keyHex string
+		var prvRaw []byte
+		if *pbkdf {
+			prvRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
+			keyHex = hex.EncodeToString(prvRaw)
+		} else {
+			keyHex = *key
+		}
+		var key []byte
+		var err error
+		if keyHex == "" {
+			key = make([]byte, 16)
+			_, err = io.ReadFull(rand.Reader, key)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Fprintln(os.Stderr, "Key=", hex.EncodeToString(key))
+		} else {
+			key, err = hex.DecodeString(keyHex)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if len(key) != 16 {
+				log.Fatal(err)
+			}
+		}
+
+		ciph := eia3.NewEIA3([]byte(key), 0x2738cdaa, 0x1a, zuc.KEY_UPLINK)
+
+		var length uint32
+		length = uint32(len(msg))
+		h, _ := hex.DecodeString(*sign)
+		t := ciph.Verify([]byte(msg), length*8, h)
+		fmt.Println(t)
+		if t == false {
+			os.Exit(1)
+		}
 		os.Exit(0)
 	}
 
