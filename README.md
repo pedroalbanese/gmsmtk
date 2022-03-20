@@ -143,12 +143,12 @@ Prevents data recovery using standard recovery tools.
 <pre>echo somestring|./gmsmtk -hex enc
 echo hexstring|./gmsmtk -hex dec
 </pre>
-#### TLS TCP/IP Layer Dump/Send:
+#### TCP/IP /w TLS Layer Dump/Send:
 <pre>./gmsmtk -tcp ip > PublicIP.txt
 ./gmsmtk -tcp dump [-pub "8081"] > Token.jwt
 ./gmsmtk -tcp send [-pub "127.0.0.1:8081"] < Token.jwt
 </pre>
-#### TLS TCP/IP Layer Listen/Dial:
+#### TCP/IP /w TLS Layer Listen/Dial:
 <pre>./gmsmtk -tcp listen [-pub "8081"]
 ./gmsmtk -tcp dial [-pub "127.0.0.1:8081"]
 </pre>
