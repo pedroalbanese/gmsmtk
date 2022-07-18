@@ -398,7 +398,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *crypt == "eea256" {
+	if *crypt == "eea256" || *crypt == "zuc256" {
 		var keyHex string
 		var keyRaw []byte
 		if *pbkdf {
@@ -451,7 +451,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *crypt == "eea128" {
+	if *crypt == "eea128" || *crypt == "eea3" || *crypt == "zuc128" {
 		var keyHex string
 		var keyRaw []byte
 		if *pbkdf {
@@ -504,7 +504,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *mac == "eia256" {
+	if *mac == "eia256" || *crypt == "zuc256" {
 		var keyHex string
 		var keyRaw []byte
 		if *pbkdf {
@@ -558,7 +558,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *mac == "eia128" {
+	if *mac == "eia128" || *crypt == "eia3" || *crypt == "zuc128" {
 		var keyHex string
 		var keyRaw []byte
 		if *pbkdf {
