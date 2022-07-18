@@ -12,7 +12,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 * GM/T 0003-2012 - SM2 Public key algorithm 256-bit.
 * GM/T 0004-2012 - SM3 Message digest algorithm. 256-bit hash value.
 * GM/T 0002-2012 - SM4 128-bit block cipher with 128-bit key.
-* GM/T 0001-2012 - ZUC Zu Chongzhi stream cipher 128-bit key.
+* GM/T 0001-2012 - ZUC Zu Chongzhi stream cipher 128/256-bit key.
 
 #### Modes of operation:
 * GCM: Galois/Counter Mode (AEAD)
@@ -34,17 +34,21 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 <pre> -bits int
        Bit-length. (for DERIVE, PBKDF2 and RAND) (default 128)
  -check string
-       Check hashsum file. (- for STDIN)
+       Check hashsum file. ('-' for STDIN)
  -crypt string
        Encrypt/Decrypt with SM4 symmetric block cipher.
- -derive string
-       Derive shared secret key (SM2-ECDH) 128-bit default.
  -digest string
-       Target file/wildcard to generate hashsum list. (- for STDIN)
+       Target file/wildcard to generate hashsum list. ('-' for STDIN)
  -hex string
        Encode/Decode [e|d] binary string to hex format and vice-versa.
+ -hkdf
+       HMAC-based key derivation function.
+ -info string
+       Associated data, additional info. (for HKDF and AEAD encryption)
  -iter int
        Iterations. (for PBKDF2 and SHRED commands) (default 1)
+ -iv string
+       Initialization vector. (for symmetric encryption)
  -key string
        Private/Public key, Secret key or Password.
  -keygen
@@ -55,28 +59,24 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
        Mode of operation: GCM, CTR or OFB. (default "GCM")
  -pbkdf2
        Password-based key derivation function.
+ -pkeyutl string
+       DERIVE shared secret, ENCRYPT/DECRYPT with asymmetric algorithm.
  -pub string
-       Remote's side public key/remote's side public IP/PEM BLOCK.
+       Remote's side public key/remote's side public IP/local port.
  -rand
        Generate random cryptographic key.
  -recursive
        Process directories recursively.
  -salt string
-       Salt. (for PBKDF2)
+       Salt. (for PBKDF2 and HKDF commands)
  -shred string
        Files/Path/Wildcard to apply data sanitization method.
  -sign
        Sign with PrivateKey.
  -signature string
        Input signature. (for verification only)
- -sm2dec
-       Decrypt with asymmetric EC-SM2 Privatekey.
- -sm2enc
-       Encrypt with asymmetric EC-SM2 Publickey.
  -tcp string
-       Encrypted TCP/IP [dump|ip|send] Transfer Protocol.
- -verbose
-       Verbose mode. (for CHECK command)
+       Encrypted TCP/IP Transfer Protocol. [dump|send|ip|listen|dial]
  -verify
        Verify with PublicKey.
  -version
@@ -87,11 +87,11 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 <pre>./gmsmtk -keygen
 </pre>
 #### Derive shared secret key (SM2-ECDH):
-<pre>./gmsmtk -derive a -key $PrivateKeyB -pub $PublicKeyA [-salt RandA;RandB] [-bits 64|128|256]
-./gmsmtk -derive b -key $PrivateKeyA -pub $PublicKeyB [-salt RandA;RandB] [-bits 64|128|256]
+<pre>./gmsmtk -pkeyutl derive_a -key $PrivateKeyB -pub $PublicKeyA [-info RandA;RandB] [-bits 64|128|256]
+./gmsmtk -pkeyutl derive_b -key $PrivateKeyA -pub $PublicKeyB [-info RandA;RandB] [-bits 64|128|256]
 </pre>
 #### Derive shared secret key (ECDH Non-standard):
-<pre>./gmsmtk -derive c -key $PrivateKey -pub $PublicKey [-bits 64|128|256]
+<pre>./gmsmtk -pkeyutl derive -key $PrivateKey -pub $PublicKey [-bits 64|128|256]
 </pre>
 #### Signature (SM2-ECDSA):
 <pre>./gmsmtk -sign -key $PrivateKey < file.ext > sign.txt
@@ -100,8 +100,8 @@ sign=$(cat sign.txt)
 echo $?
 </pre>
 #### Asymmetric encryption/decryption with SM2 algorithm:
-<pre>./gmsmtk -sm2enc -key $PublicKey < plaintext.ext > ciphertext.ext
-./gmsmtk -sm2dec -key $PrivateKey < ciphertext.ext > plaintext.ext
+<pre>./gmsmtk -pkeyutl enc -key $PublicKey < plaintext.ext > ciphertext.ext
+./gmsmtk -pkeyutl dec -key $PrivateKey < ciphertext.ext > plaintext.ext
 </pre>
 #### Symmetric encryption/decryption with SM4 block cipher:
 <pre>./gmsmtk -crypt enc -key $128bitkey < plaintext.ext > ciphertext.ext
@@ -111,12 +111,12 @@ echo $?
 <pre>./gmsmtk -mac cmac -key $64bitkey < file.ext
 </pre>
 #### Symmetric encryption/decryption with ZUC stream cipher:
-<pre>./gmsmtk -crypt eea3 -key $128bitkey < plaintext.ext > ciphertext.ext
-./gmsmtk -crypt eea3 -key $128bitkey < ciphertext.ext > plaintext.ext
+<pre>./gmsmtk -crypt eea128 -key $128bitkey < plaintext.ext > ciphertext.ext
+./gmsmtk -crypt eea128 -key $128bitkey < ciphertext.ext > plaintext.ext
 </pre>
 #### MAC-EIA3 (3GPP message authentication code):
-<pre>./gmsmtk -mac eia3 -key $128bitkey < file.ext
-./gmsmtk -mac eia3 -key $128bitkey -signature $32bitmac < file.ext
+<pre>./gmsmtk -mac eia128 -key $128bitkey < file.ext
+./gmsmtk -mac eia128 -key $128bitkey -signature $32bitmac < file.ext
 </pre>
 #### SM3 hashsum (list):
 <pre>./gmsmtk -digest "*.*" [-recursive]
