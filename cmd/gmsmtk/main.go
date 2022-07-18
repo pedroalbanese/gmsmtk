@@ -504,7 +504,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *mac == "eia256" || *crypt == "zuc256" {
+	if *mac == "eia256" || *mac == "zuc256" {
 		var keyHex string
 		var keyRaw []byte
 		if *pbkdf {
@@ -554,11 +554,11 @@ func main() {
 				os.Exit(0)
 			}
 		}
-		fmt.Printf("MAC-%s= %x\n", strings.ToUpper(*mac), h.Sum(nil))
+		fmt.Printf("%x\n", h.Sum(nil))
 		os.Exit(0)
 	}
 
-	if *mac == "eia128" || *crypt == "eia3" || *crypt == "zuc128" {
+	if *mac == "eia128" || *mac == "eia3" || *mac == "zuc128" {
 		var keyHex string
 		var keyRaw []byte
 		if *pbkdf {
@@ -608,7 +608,7 @@ func main() {
 				os.Exit(0)
 			}
 		}
-		fmt.Printf("MAC-%s= %x\n", strings.ToUpper(*mac), h.Sum(nil))
+		fmt.Printf("%x\n", h.Sum(nil))
 		os.Exit(0)
 	}
 
