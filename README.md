@@ -20,8 +20,8 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 * OFB: Output Feedback Mode
 
 #### Cryptographic Functions:
-* Asymmetric Encryption/Decryption
-* Symmetric Encryption/Decryption
+* Asymmetric Encryption
+* Symmetric Encryption + AEAD mode
 * Digital Signature (ECDSA)
 * Shared Key Agreement (ECDH)
 * Recusive Hash Digest + Check 
