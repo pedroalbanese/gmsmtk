@@ -11,7 +11,9 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"golang.org/x/crypto/hkdf"
 	"golang.org/x/crypto/pbkdf2"
+	"hash"
 	"io"
 	"io/ioutil"
 	"log"
@@ -22,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/emmansun/gmsm/zuc"
 	"github.com/pedroalbanese/cmac"
 	"github.com/pedroalbanese/gmsm/sm2"
 	"github.com/pedroalbanese/gmsm/sm3"
@@ -31,9 +34,6 @@ import (
 	"github.com/pedroalbanese/go-external-ip"
 	"github.com/pedroalbanese/randomart"
 	"github.com/pedroalbanese/shred"
-	"github.com/pedroalbanese/zuc"
-	"github.com/pedroalbanese/zuc/eea3"
-	"github.com/pedroalbanese/zuc/eia3"
 )
 
 const Version = "1.2.1"
@@ -42,26 +42,26 @@ var (
 	bit     = flag.Int("bits", 128, "Bit-length. (for DERIVE, PBKDF2 and RAND)")
 	check   = flag.String("check", "", "Check hashsum file. ('-' for STDIN)")
 	crypt   = flag.String("crypt", "", "Encrypt/Decrypt with SM4 symmetric block cipher.")
-	dec     = flag.Bool("sm2dec", false, "Decrypt with asymmetric EC-SM2 Privatekey.")
 	del     = flag.String("shred", "", "Files/Path/Wildcard to apply data sanitization method.")
-	derive  = flag.String("derive", "", "Derive shared secret key (SM2-ECDH) 128-bit default.")
-	enc     = flag.Bool("sm2enc", false, "Encrypt with asymmetric EC-SM2 Publickey.")
 	gen     = flag.Bool("keygen", false, "Generate asymmetric EC-SM2 keypair.")
 	hexenc  = flag.String("hex", "", "Encode/Decode [e|d] binary string to hex format and vice-versa.")
+	info    = flag.String("info", "", "Associated data, additional info. (for HKDF and AEAD encryption)")
 	iter    = flag.Int("iter", 1, "Iterations. (for PBKDF2 and SHRED commands)")
+	kdf     = flag.Bool("hkdf", false, "HMAC-based key derivation function.")
 	key     = flag.String("key", "", "Private/Public key, Secret key or Password.")
 	mac     = flag.String("mac", "", "Compute Cipher-based/Hash-based message authentication code.")
 	mode    = flag.String("mode", "GCM", "Mode of operation: GCM, CTR or OFB.")
 	pbkdf   = flag.Bool("pbkdf2", false, "Password-based key derivation function.")
-	public  = flag.String("pub", "", "Remote's side public key/remote's side public IP/PEM BLOCK.")
+	pkeyutl = flag.String("pkeyutl", "", "DERIVE shared secret, ENCRYPT/DECRYPT with asymmetric algorithm.")
+	public  = flag.String("pub", "", "Remote's side public key/remote's side public IP/local port.")
 	random  = flag.Bool("rand", false, "Generate random cryptographic key.")
 	rec     = flag.Bool("recursive", false, "Process directories recursively.")
-	salt    = flag.String("salt", "", "Salt. (for PBKDF2)")
+	salt    = flag.String("salt", "", "Salt. (for PBKDF2 and HKDF commands)")
 	sig     = flag.Bool("sign", false, "Sign with PrivateKey.")
 	sign    = flag.String("signature", "", "Input signature. (for verification only)")
 	target  = flag.String("digest", "", "Target file/wildcard to generate hashsum list. ('-' for STDIN)")
 	tcpip   = flag.String("tcp", "", "Encrypted TCP/IP Transfer Protocol. [dump|send|ip|listen|dial]")
-	verbose = flag.Bool("verbose", false, "Verbose mode. (for CHECK command)")
+	vector  = flag.String("iv", "", "Initialization vector. (for symmetric encryption)")
 	verify  = flag.Bool("verify", false, "Verify with PublicKey.")
 	version = flag.Bool("version", false, "Print version information.")
 )
@@ -77,7 +77,6 @@ func publicKey(priv interface{}) interface{} {
 
 func handleConnection(c net.Conn) {
 	log.Printf("Client(TLS) %v connected via secure channel.", c.RemoteAddr())
-	log.Printf("Connection from %v closed.", c.RemoteAddr())
 }
 
 func main() {
@@ -94,7 +93,7 @@ func main() {
 		return
 	}
 
-	if *random == true && (*bit == 256 || *bit == 128 || *bit == 64) {
+	if *random == true && (*bit == 256 || *bit == 184 || *bit == 128 || *bit == 64) {
 		var key []byte
 		var err error
 		key = make([]byte, *bit/8)
@@ -295,6 +294,7 @@ func main() {
 
 			fmt.Println("Connection accepted")
 
+			go handleConnection(conn)
 			for {
 				message, err := bufio.NewReader(conn).ReadString('\n')
 				if err != nil {
@@ -398,10 +398,62 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *crypt == "eea3" {
+	if *crypt == "eea256" {
 		var keyHex string
 		var keyRaw []byte
+		if *pbkdf {
+			keyRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 32, sm3.New)
+			keyHex = hex.EncodeToString(keyRaw)
+		} else {
+			keyHex = *key
+		}
+		var key []byte
 		var err error
+		if keyHex == "" {
+			key = make([]byte, 32)
+			_, err = io.ReadFull(rand.Reader, key)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Fprintln(os.Stderr, "Key=", hex.EncodeToString(key))
+		} else {
+			key, err = hex.DecodeString(keyHex)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if len(key) != 32 {
+				log.Fatal(err)
+			}
+		}
+		var nonce []byte
+		if *vector != "" {
+			nonce, _ = hex.DecodeString(*vector)
+		} else {
+			nonce = make([]byte, 23)
+			fmt.Fprintf(os.Stderr, "IV= %x\n", nonce)
+		}
+		ciph, _ := zuc.NewCipher(key, nonce)
+		buf := make([]byte, 64*1<<10)
+		var n int
+		for {
+			n, err = os.Stdin.Read(buf)
+			if err != nil && err != io.EOF {
+				log.Fatal(err)
+			}
+			ciph.XORKeyStream(buf[:n], buf[:n])
+			if _, err := os.Stdout.Write(buf[:n]); err != nil {
+				log.Fatal(err)
+			}
+			if err == io.EOF {
+				break
+			}
+		}
+		os.Exit(0)
+	}
+
+	if *crypt == "eea128" {
+		var keyHex string
+		var keyRaw []byte
 		if *pbkdf {
 			keyRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
 			keyHex = hex.EncodeToString(keyRaw)
@@ -409,53 +461,6 @@ func main() {
 			keyHex = *key
 		}
 		var key []byte
-		if keyHex == "" {
-			key = make([]byte, 16)
-			_, err = io.ReadFull(rand.Reader, key)
-			if err != nil {
-				log.Fatal(err)
-			}
-			fmt.Fprintln(os.Stderr, "Key=", hex.EncodeToString(key))
-		} else {
-			key, err = hex.DecodeString(keyHex)
-			if err != nil {
-				log.Fatal(err)
-			}
-			if len(key) != 16 {
-				log.Fatal(err)
-			}
-		}
-
-		ciph := eea3.NewEEA3(key, 0x2738cdaa, 0x1a, zuc.KEY_UPLINK)
-
-		buf := bytes.NewBuffer(nil)
-		data := os.Stdin
-		io.Copy(buf, data)
-		msg := buf.Bytes()
-
-		var length uint32
-		length = uint32(len(msg))
-		t := ciph.Encrypt(msg, length*8)
-		fmt.Printf("%s", string(t))
-
-		os.Exit(0)
-	}
-
-	if *mac == "eia3" && *sign == "" {
-		buf := bytes.NewBuffer(nil)
-		data := os.Stdin
-		io.Copy(buf, data)
-		msg := buf.Bytes()
-
-		var keyHex string
-		var prvRaw []byte
-		if *pbkdf {
-			prvRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
-			keyHex = hex.EncodeToString(prvRaw)
-		} else {
-			keyHex = *key
-		}
-		var key []byte
 		var err error
 		if keyHex == "" {
 			key = make([]byte, 16)
@@ -473,59 +478,137 @@ func main() {
 				log.Fatal(err)
 			}
 		}
-
-		ciph := eia3.NewEIA3([]byte(key), 0x2738cdaa, 0x1a, zuc.KEY_UPLINK)
-
-		var length uint32
-		length = uint32(len(msg))
-		t := ciph.Hash([]byte(msg), length*8)
-		fmt.Printf("%x\n", t)
+		var nonce []byte
+		if *vector != "" {
+			nonce, _ = hex.DecodeString(*vector)
+		} else {
+			nonce = make([]byte, 16)
+			fmt.Fprintf(os.Stderr, "IV= %x\n", nonce)
+		}
+		ciph, _ := zuc.NewCipher(key, nonce)
+		buf := make([]byte, 64*1<<10)
+		var n int
+		for {
+			n, err = os.Stdin.Read(buf)
+			if err != nil && err != io.EOF {
+				log.Fatal(err)
+			}
+			ciph.XORKeyStream(buf[:n], buf[:n])
+			if _, err := os.Stdout.Write(buf[:n]); err != nil {
+				log.Fatal(err)
+			}
+			if err == io.EOF {
+				break
+			}
+		}
 		os.Exit(0)
 	}
 
-	if *mac == "eia3" && *sign != "" {
-		buf := bytes.NewBuffer(nil)
-		data := os.Stdin
-		io.Copy(buf, data)
-		msg := buf.Bytes()
-
+	if *mac == "eia256" {
 		var keyHex string
-		var prvRaw []byte
+		var keyRaw []byte
 		if *pbkdf {
-			prvRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
-			keyHex = hex.EncodeToString(prvRaw)
+			keyRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 32, sm3.New)
+			keyHex = hex.EncodeToString(keyRaw)
 		} else {
 			keyHex = *key
 		}
-		var key []byte
 		var err error
 		if keyHex == "" {
-			key = make([]byte, 16)
-			_, err = io.ReadFull(rand.Reader, key)
-			if err != nil {
-				log.Fatal(err)
-			}
-			fmt.Fprintln(os.Stderr, "Key=", hex.EncodeToString(key))
+			keyRaw, _ = hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000000")
+			fmt.Fprintln(os.Stderr, "Key=", hex.EncodeToString(keyRaw))
 		} else {
-			key, err = hex.DecodeString(keyHex)
+			keyRaw, err = hex.DecodeString(keyHex)
 			if err != nil {
 				log.Fatal(err)
 			}
-			if len(key) != 16 {
+			if len(keyRaw) != 32 {
 				log.Fatal(err)
 			}
 		}
-
-		ciph := eia3.NewEIA3([]byte(key), 0x2738cdaa, 0x1a, zuc.KEY_UPLINK)
-
-		var length uint32
-		length = uint32(len(msg))
-		h, _ := hex.DecodeString(*sign)
-		t := ciph.Verify([]byte(msg), length*8, h)
-		fmt.Println(t)
-		if t == false {
-			os.Exit(1)
+		var nonce []byte
+		if *vector != "" {
+			nonce, err = hex.DecodeString(*vector)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			nonce, _ = hex.DecodeString("0000000000000000000000000000000000000000000000")
+			fmt.Fprintln(os.Stderr, "IV=", hex.EncodeToString(nonce))
 		}
+		h, _ := zuc.NewHash256(keyRaw, nonce, *bit/8)
+		if _, err := io.Copy(h, os.Stdin); err != nil {
+			log.Fatal(err)
+		}
+		io.Copy(h, os.Stdin)
+		var verify bool
+		if *sign != "" {
+			mac := hex.EncodeToString(h.Sum(nil))
+			if mac != *sign {
+				verify = false
+				fmt.Println(verify)
+				os.Exit(1)
+			} else {
+				verify = true
+				fmt.Println(verify)
+				os.Exit(0)
+			}
+		}
+		fmt.Printf("MAC-%s= %x\n", strings.ToUpper(*mac), h.Sum(nil))
+		os.Exit(0)
+	}
+
+	if *mac == "eia128" {
+		var keyHex string
+		var keyRaw []byte
+		if *pbkdf {
+			keyRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
+			keyHex = hex.EncodeToString(keyRaw)
+		} else {
+			keyHex = *key
+		}
+		var err error
+		if keyHex == "" {
+			keyRaw, _ = hex.DecodeString("00000000000000000000000000000000")
+			fmt.Fprintln(os.Stderr, "Key=", hex.EncodeToString(keyRaw))
+		} else {
+			keyRaw, err = hex.DecodeString(keyHex)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if len(keyRaw) != 16 {
+				log.Fatal(err)
+			}
+		}
+		var nonce []byte
+		if *vector != "" {
+			nonce, err = hex.DecodeString(*vector)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			nonce, _ = hex.DecodeString("00000000000000000000000000000000")
+			fmt.Fprintln(os.Stderr, "IV=", hex.EncodeToString(nonce))
+		}
+		h, _ := zuc.NewHash(keyRaw, nonce)
+		if _, err := io.Copy(h, os.Stdin); err != nil {
+			log.Fatal(err)
+		}
+		io.Copy(h, os.Stdin)
+		var verify bool
+		if *sign != "" {
+			mac := hex.EncodeToString(h.Sum(nil))
+			if mac != *sign {
+				verify = false
+				fmt.Println(verify)
+				os.Exit(1)
+			} else {
+				verify = true
+				fmt.Println(verify)
+				os.Exit(0)
+			}
+		}
+		fmt.Printf("MAC-%s= %x\n", strings.ToUpper(*mac), h.Sum(nil))
 		os.Exit(0)
 	}
 
@@ -657,7 +740,13 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		iv := make([]byte, 16)
+		var iv []byte
+		if *vector != "" {
+			iv, _ = hex.DecodeString(*vector)
+		} else {
+			iv = make([]byte, 16)
+			fmt.Fprintf(os.Stderr, "IV= %x\n", iv)
+		}
 		var stream cipher.Stream
 		if *mode == "CTR" || *mode == "ctr" {
 			stream = cipher.NewCTR(ciph, iv)
@@ -810,6 +899,7 @@ func main() {
 			txtlines = append(txtlines, scanner.Text())
 		}
 
+		var exit int
 		for _, eachline := range txtlines {
 			lines := strings.Split(string(eachline), " *")
 
@@ -826,28 +916,19 @@ func main() {
 					io.Copy(h, f)
 					f.Close()
 
-					if *verbose {
-						if hex.EncodeToString(h.Sum(nil)) == lines[0] {
-							fmt.Println(lines[1]+"\t", "OK")
-						} else {
-							fmt.Println(lines[1]+"\t", "FAILED")
-						}
+					if hex.EncodeToString(h.Sum(nil)) == lines[0] {
+						fmt.Println(lines[1]+"\t", "OK")
 					} else {
-						if hex.EncodeToString(h.Sum(nil)) == lines[0] {
-						} else {
-							os.Exit(1)
-						}
+						fmt.Println(lines[1]+"\t", "FAILED")
+						exit = 1
 					}
 				} else {
-					if *verbose {
-						fmt.Println(lines[1]+"\t", "Not found!")
-					} else {
-						os.Exit(1)
-					}
+					fmt.Println(lines[1]+"\t", "Not found!")
+					exit = 1
 				}
 			}
 		}
-		os.Exit(0)
+		os.Exit(exit)
 	}
 
 	if *gen {
@@ -879,7 +960,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *derive == "a" {
+	if *pkeyutl == "derive_a" {
 		private, err := ReadPrivateKeyFromHex(*key)
 		if err != nil {
 			log.Fatal(err)
@@ -892,9 +973,9 @@ func main() {
 		var split []string
 		var ra []byte
 		var rb []byte
-		if *salt != "" {
-			salt := *salt
-			split = strings.Split(salt, ";")
+		if *info != "" {
+			info := *info
+			split = strings.Split(info, ";")
 			if len(split) < 2 {
 				fmt.Println("Derivation needs two salts separated by semicolon.")
 				os.Exit(2)
@@ -912,7 +993,7 @@ func main() {
 
 	}
 
-	if *derive == "b" {
+	if *pkeyutl == "derive_b" {
 		private, err := ReadPrivateKeyFromHex(*key)
 		if err != nil {
 			log.Fatal(err)
@@ -925,9 +1006,9 @@ func main() {
 		var split []string
 		var ra []byte
 		var rb []byte
-		if *salt != "" {
-			salt := *salt
-			split = strings.Split(salt, ",")
+		if *info != "" {
+			info := *info
+			split = strings.Split(info, ";")
 			if len(split) < 2 {
 				fmt.Println("Derivation needs two salts separated by semicolon.")
 				os.Exit(2)
@@ -943,7 +1024,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *derive == "c" {
+	if *pkeyutl == "derive" {
 		private, err := ReadPrivateKeyFromHex(*key)
 		if err != nil {
 			log.Fatal(err)
@@ -959,7 +1040,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *enc {
+	if *pkeyutl == "enc" || *pkeyutl == "encrypt" {
 		pub, err := ReadPublicKeyFromHex(*key)
 		if err != nil {
 			log.Fatal(err)
@@ -976,7 +1057,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *dec {
+	if *pkeyutl == "dec" || *pkeyutl == "decrypt" {
 		priv, err := ReadPrivateKeyFromHex(*key)
 		if err != nil {
 			log.Fatal(err)
@@ -1049,9 +1130,19 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *pbkdf == true && *crypt == "" && *mac == "" && (*bit == 256 || *bit == 128 || *bit == 64) {
+	if *pbkdf == true && *crypt == "" && *mac == "" && (*bit == 256 || *bit == 184 || *bit == 128 || *bit == 64) {
 		prvRaw := pbkdf2.Key([]byte(*key), []byte(*salt), *iter, *bit/8, sm3.New)
 		fmt.Println(hex.EncodeToString(prvRaw))
+		os.Exit(0)
+	}
+
+	if *kdf {
+		keyRaw, err := Hkdf([]byte(*key), []byte(*salt), []byte(*info))
+		if err != nil {
+			log.Fatal(err)
+		}
+		keySlice := string(keyRaw[:])
+		fmt.Println(hex.EncodeToString([]byte(keySlice)[:*bit/8]))
 		os.Exit(0)
 	}
 
@@ -1060,4 +1151,18 @@ func main() {
 	} else if *key != "" && *key != "-" {
 		fmt.Println(randomart.FromString(*key))
 	}
+}
+
+func Hkdf(master, salt, info []byte) ([128]byte, error) {
+	var h func() hash.Hash
+	g := func() hash.Hash {
+		return sm3.New()
+	}
+	h = g
+	hkdf := hkdf.New(h, master, salt, info)
+	key := make([]byte, 32)
+	_, err := io.ReadFull(hkdf, key)
+	var result [128]byte
+	copy(result[:], key)
+	return result, err
 }
