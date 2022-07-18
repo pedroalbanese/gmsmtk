@@ -31,6 +31,11 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 * PBKDF2 (Password-based key derivation function 2)
 * TLS 1.2 (Transport Layer Security)
 
+#### Non-Cryptographic Functions:
+* Shred: Data sanitization method
+* Bin to Hex/Hex to Bin string conversion
+* Random Art (Public key Fingerprint)
+
 ### Usage 用法:
 <pre> -bits int
        Bit-length. (for DERIVE, PBKDF2 and RAND) (default 128)
