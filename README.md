@@ -1,12 +1,12 @@
 # GMSM Toolkit ☭
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](https://github.com/pedroalbanese/gmsmtk/blob/master/LICENSE.md) 
-[![GitHub downloads](https://img.shields.io/github/downloads/pedroalbanese/gmsmtk/total.svg?logo=github&logoColor=white)](https://github.com/pedroalbanese/gmsmtk/releases)
 [![GoDoc](https://godoc.org/github.com/pedroalbanese/gmsmtk?status.png)](http://godoc.org/github.com/pedroalbanese/gmsmtk)
+[![GitHub downloads](https://img.shields.io/github/downloads/pedroalbanese/gmsmtk/total.svg?logo=github&logoColor=white)](https://github.com/pedroalbanese/gmsmtk/releases)
 [![Go Report Card](https://goreportcard.com/badge/github.com/pedroalbanese/gmsmtk)](https://goreportcard.com/report/github.com/pedroalbanese/gmsmtk)
 [![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/pedroalbanese/gmsmtk)](https://golang.org)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/pedroalbanese/gmsmtk)](https://github.com/pedroalbanese/gmsmtk/releases)
 
-Multi purpose cross-platform cryptography tool for asymmetric/symmetric encryption, digital signature, cipher-based message authentication code (CMAC), hash digest, hash-based message authentication code (HMAC) and PBKDF2 function.
+Multi-purpose cross-platform cryptography tool for asymmetric/symmetric encryption, digital signature, cipher-based message authentication code (CMAC), hash digest, hash-based message authentication code (HMAC) and PBKDF2 function.
 
 #### SM2/SM3/SM4 Chinese National Standard Algorithms:
 * GM/T 0003-2012 - SM2 Public key algorithm 256-bit.
@@ -15,7 +15,7 @@ Multi purpose cross-platform cryptography tool for asymmetric/symmetric encrypti
 * GM/T 0001-2012 - ZUC Zu Chongzhi stream cipher 128/256-bit key.
 
 #### Modes of operation:
-* GCM: Galois/Counter Mode (AEAD)
+* GCM: Galois/Counter Mode (AEAD) (default)
 * CTR: Counter Mode
 * OFB: Output Feedback Mode
 
@@ -148,8 +148,8 @@ Prevents data recovery using standard recovery tools.
 <pre>./gmsmtk -shred "keypair.ini" -iter 25
 </pre>
 #### Bin to Hex/Hex to Bin:
-<pre>echo somestring|./gmsmtk -hex enc
-echo hexstring|./gmsmtk -hex dec
+<pre>./gmsmtk -hex enc < File.ext > File.hex
+./gmsmtk -hex dec < File.hex > File.ext
 </pre>
 #### TCP/IP w/ TLS Layer Dump/Send:
 <pre>./gmsmtk -tcp ip > PublicIP.txt
