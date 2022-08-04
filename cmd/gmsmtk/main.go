@@ -36,7 +36,7 @@ import (
 	"github.com/pedroalbanese/shred"
 )
 
-const Version = "1.2.1"
+const Version = "1.2.2"
 
 var (
 	bit     = flag.Int("bits", 128, "Bit-length. (for DERIVE, PBKDF2 and RAND)")
@@ -787,6 +787,19 @@ func main() {
 		c, _ := sm4.NewCipher([]byte(keyHex))
 		h, _ := cmac.New(c)
 		io.Copy(h, os.Stdin)
+		var verify bool
+		if *sign != "" {
+			mac := hex.EncodeToString(h.Sum(nil))
+			if mac != *sign {
+				verify = false
+				fmt.Println(verify)
+				os.Exit(1)
+			} else {
+				verify = true
+				fmt.Println(verify)
+				os.Exit(0)
+			}
+		}
 		fmt.Println(hex.EncodeToString(h.Sum(nil)))
 		os.Exit(0)
 	}
@@ -807,6 +820,19 @@ func main() {
 		h := hmac.New(sm3.New, key)
 		if _, err = io.Copy(h, os.Stdin); err != nil {
 			log.Fatal(err)
+		}
+		var verify bool
+		if *sign != "" {
+			mac := hex.EncodeToString(h.Sum(nil))
+			if mac != *sign {
+				verify = false
+				fmt.Println(verify)
+				os.Exit(1)
+			} else {
+				verify = true
+				fmt.Println(verify)
+				os.Exit(0)
+			}
 		}
 		fmt.Println(hex.EncodeToString(h.Sum(nil)))
 		os.Exit(0)
