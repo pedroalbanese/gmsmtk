@@ -115,6 +115,7 @@ echo $?
 </pre>
 #### CMAC-SM4 (cipher-based message authentication code):
 <pre>./gmsmtk -mac cmac -key $64bitkey < file.ext
+./gmsmtk -mac cmac -key $64bitkey -signature $128bitmac < file.ext
 </pre>
 #### Symmetric encryption/decryption with ZUC stream cipher:
 <pre>./gmsmtk -crypt eea128 -key $128bitkey < plaintext.ext > ciphertext.ext
@@ -132,6 +133,7 @@ echo $?
 </pre>
 #### HMAC-SM3 (hash-based message authentication code):
 <pre>./gmsmtk -mac hmac -key $128bitkey < file.ext
+./gmsmtk -mac hmac -key $128bitkey -signature $256bitmac < file.ext
 </pre>
 #### PBKDF2 (password-based key derivation function 2):
 <pre>./gmsmtk -pbkdf2 -key "pass" -iter 10000 -salt "salt"
