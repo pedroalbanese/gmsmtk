@@ -150,6 +150,7 @@ Prevents data recovery using standard recovery tools.
 #### Bin to Hex/Hex to Bin:
 <pre>./gmsmtk -hex enc < File.ext > File.hex
 ./gmsmtk -hex dec < File.hex > File.ext
+./gmsmtk -hex dump < File.ext
 </pre>
 #### TCP/IP w/ TLS Layer Dump/Send:
 <pre>./gmsmtk -tcp ip > PublicIP.txt
