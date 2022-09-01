@@ -36,7 +36,7 @@ import (
 	"github.com/pedroalbanese/shred"
 )
 
-const Version = "1.2.2"
+const Version = "1.2.3"
 
 var (
 	bit     = flag.Int("bits", 128, "Bit-length. (for DERIVE, PBKDF2 and RAND)")
