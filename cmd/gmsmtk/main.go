@@ -105,7 +105,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *hexenc == "e" || *hexenc == "enc" || *hexenc == "encode" {
+	if *hexenc == "enc" || *hexenc == "encode" {
 		b, err := ioutil.ReadAll(os.Stdin)
 		if len(b) == 0 {
 			os.Exit(0)
@@ -119,7 +119,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *hexenc == "d" || *hexenc == "dec" || *hexenc == "decode" {
+	if *hexenc == "dec" || *hexenc == "decode" {
 		var err error
 		buf := bytes.NewBuffer(nil)
 		data := os.Stdin
@@ -141,6 +141,17 @@ func main() {
 			log.Fatal(err)
 		}
 		os.Stdout.Write(o)
+		os.Exit(0)
+	}
+
+	if *hexenc == "dump" {
+		buf := bytes.NewBuffer(nil)
+		data := os.Stdin
+		io.Copy(buf, data)
+		b := strings.TrimSuffix(string(buf.Bytes()), "\r\n")
+		b = strings.TrimSuffix(string(b), "\n")
+		dump := hex.Dump([]byte(b))
+		os.Stdout.Write([]byte(dump))
 		os.Exit(0)
 	}
 
@@ -301,7 +312,7 @@ func main() {
 					fmt.Println(err)
 					os.Exit(3)
 				}
-				fmt.Print("Received: ", string(message))
+				log.Print("Rcv: ", string(message))
 
 				newmessage := strings.ToUpper(message)
 				conn.Write([]byte(newmessage + "\n"))
@@ -612,7 +623,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *crypt == "enc" && *mode == "GCM" {
+	if (*crypt == "enc" || *crypt == "dec") && *mode == "GCM" {
 		var keyHex string
 		var prvRaw []byte
 		if *pbkdf {
@@ -651,62 +662,34 @@ func main() {
 		io.Copy(buf, data)
 		msg := buf.Bytes()
 
-		nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(msg)+aead.Overhead())
+		if *crypt == "enc" {
+			nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(msg)+aead.Overhead())
 
-		out := aead.Seal(nonce, nonce, msg, nil)
-		fmt.Printf("%s", out)
+			if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+				log.Fatal(err)
+			}
 
-		os.Exit(0)
-	}
+			if *vector != "" {
+				nonce, _ = hex.DecodeString(*vector)
+			}
 
-	if *crypt == "dec" && *mode == "GCM" {
-		var keyHex string
-		var prvRaw []byte
-		if *pbkdf {
-			prvRaw = pbkdf2.Key([]byte(*key), []byte(*salt), *iter, 16, sm3.New)
-			keyHex = hex.EncodeToString(prvRaw)
-		} else {
-			keyHex = *key
+			out := aead.Seal(nonce, nonce, msg, []byte(*info))
+			fmt.Printf("%s", out)
+
+			os.Exit(0)
 		}
-		var key []byte
-		var err error
-		if keyHex == "" {
-			key = make([]byte, 16)
-			_, err = io.ReadFull(rand.Reader, key)
+
+		if *crypt == "dec" {
+			nonce, msg := msg[:aead.NonceSize()], msg[aead.NonceSize():]
+
+			out, err := aead.Open(nil, nonce, msg, []byte(*info))
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Fprintln(os.Stderr, "Key=", hex.EncodeToString(key))
-		} else {
-			key, err = hex.DecodeString(keyHex)
-			if err != nil {
-				log.Fatal(err)
-			}
-			if len(key) != 128/8 {
-				log.Fatal(err)
-			}
+			fmt.Printf("%s", out)
+
+			os.Exit(0)
 		}
-
-		ciph, err := sm4.NewCipher(key)
-		aead, err := cipher.NewGCM(ciph)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-
-		buf := bytes.NewBuffer(nil)
-		data := os.Stdin
-		io.Copy(buf, data)
-		msg := buf.Bytes()
-
-		nonce, msg := msg[:aead.NonceSize()], msg[aead.NonceSize():]
-
-		out, err := aead.Open(nil, nonce, msg, nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("%s", out)
-
-		os.Exit(0)
 	}
 
 	if *crypt != "" && *mode != "GCM" {
