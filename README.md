@@ -1,4 +1,4 @@
-# :cn: GMSM Toolkit ☭
+# GMSM Toolkit ☭
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](https://github.com/pedroalbanese/gmsmtk/blob/master/LICENSE.md) 
 [![GoDoc](https://godoc.org/github.com/pedroalbanese/gmsmtk?status.png)](http://godoc.org/github.com/pedroalbanese/gmsmtk)
 [![GitHub downloads](https://img.shields.io/github/downloads/pedroalbanese/gmsmtk/total.svg?logo=github&logoColor=white)](https://github.com/pedroalbanese/gmsmtk/releases)
