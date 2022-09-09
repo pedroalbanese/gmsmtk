@@ -28,7 +28,14 @@ func ReadPrivateKeyFromHex(Dhex string) (*sm2.PrivateKey, error) {
 }
 
 func WritePrivateKeyToHex(key *sm2.PrivateKey) string {
-	return key.D.Text(16)
+//	return key.D.Text(16)
+	d := key.D.Bytes()
+	if n := len(d); n < 32 {
+		d = append(zeroByteSlice()[:64-n], d...)
+	}
+	c := []byte{}
+	c = append(c, d...)
+	return hex.EncodeToString(c)
 }
 
 func ReadPublicKeyFromHex(Qhex string) (*sm2.PublicKey, error) {
