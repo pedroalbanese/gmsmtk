@@ -3003,5 +3003,9 @@ EXAMPLES  (SM9)
   ` + bin + ` -algorithm SM9ENCRYPT -pkey encrypt -key M.pub -id bob
   ` + bin + ` -algorithm SM9ENCRYPT -pkey decrypt -key bob.pem -id bob
   ` + bin + ` -algorithm SM9ENCRYPT -pkey wrapkey -key M.pub -id bob
-  ` + bin + ` -algorithm SM9ENCRYPT -pkey unwrapkey -key bob.pem -id bob`)
+  ` + bin + ` -algorithm SM9ENCRYPT -pkey unwrapkey -key bob.pem -id bob
+  
+OPTIONS
+  -version              print version and exit
+  -h, --help            print all flags`)
 }
