@@ -337,7 +337,7 @@ echo $?
 #### TLCP — server / client (mutual authentication):
 ```bash
 ./gmsmtk -algorithm SM2 -tcp server -cert server.pem -key server.key -cacert ca.pem -cakey ca.key [-ipport "8081"]
-./gmsmtk -algorithm SM2 -tcp client -cert client.pem -key client.key -cacert ca.pem -cakey ca.key    [-ipport "127.0.0.1:8081"]
+./gmsmtk -algorithm SM2 -tcp client -cert client.pem -key client.key -cacert ca.pem -cakey ca.key [-ipport "127.0.0.1:8081"]
 ```
 
 #### TLCP — print current external IP:
