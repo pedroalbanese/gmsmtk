@@ -1191,6 +1191,10 @@ func main() {
 // TLCP
 // ===========================================================================
 
+// ===========================================================================
+// TLCP
+// ===========================================================================
+
 func handleTLCP() {
 	if *tcpip == "ip" {
 		consensus := externalip.DefaultConsensus(nil, nil)
@@ -1203,18 +1207,22 @@ func handleTLCP() {
 		return
 	}
 
-	// Load + decrypt (if needed) the server's signature keypair into plain PEM.
-	sigCertData, sigPrivData := loadPlainKeyPair(*cert, *key, *pwd)
-	sigcert, err := tlcp.X509KeyPair(sigCertData, sigPrivData)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	var cfg tlcp.Config
-	cfg.Certificates = []tlcp.Certificate{sigcert}
 	cfg.CipherSuites = []uint16{tlcp.ECC_SM4_GCM_SM3, tlcp.ECC_SM4_CBC_SM3}
 
-	if *cacert != "" && *cakey != "" {
+	// Server always needs a signature keypair.
+	// Client only needs one when mutual authentication is desired.
+	if *tcpip == "server" || (*cert != "" && *key != "") {
+		sigCertData, sigPrivData := loadPlainKeyPair(*cert, *key, *pwd)
+		sigcert, err := tlcp.X509KeyPair(sigCertData, sigPrivData)
+		if err != nil {
+			log.Fatal(err)
+		}
+		cfg.Certificates = []tlcp.Certificate{sigcert}
+	}
+
+	// Optional encryption certificate (server side, dual-cert TLCP).
+	if *tcpip == "server" && *cacert != "" && *cakey != "" {
 		encCertData, encPrivData := loadPlainKeyPair(*cacert, *cakey, *pwd2)
 		enccert, err := tlcp.X509KeyPair(encCertData, encPrivData)
 		if err != nil {
@@ -1224,6 +1232,9 @@ func handleTLCP() {
 	}
 
 	if *tcpip == "server" {
+		// Only enforce client auth when a root CA is provided (-root).
+		// Without -root, ClientAuth stays default (NoClientCert) and the
+		// server accepts clients without certificates (unilateral auth).
 		if *root != "" {
 			rootData, err := ioutil.ReadFile(*root)
 			if err != nil {
@@ -1278,6 +1289,7 @@ func handleTLCP() {
 	}
 
 	if *tcpip == "client" {
+		// Validate the server chain against -root when provided.
 		if *root != "" {
 			rootData, err := ioutil.ReadFile(*root)
 			if err != nil {
@@ -1292,6 +1304,8 @@ func handleTLCP() {
 			pool.AddCert(rootCert)
 			cfg.RootCAs = pool
 		} else {
+			// Without -root, skip server chain verification (unilateral
+			// auth; same as edgetk when -root is omitted).
 			cfg.InsecureSkipVerify = true
 		}
 		ipport := "127.0.0.1:8081"
@@ -2982,6 +2996,7 @@ EXAMPLES  (SM2 is the default)
   ` + bin + ` -digest file.txt
   ` + bin + ` -digest '*.go' -recursive
   ` + bin + ` -pkey keygen -prv SM2.pem -pub SM2.pub
+  ` + bin + ` -pkey certgen -key SM2.pem -cert CA.crt -isca -days 3650
   ` + bin + ` -pkey sign   -key SM2.pem file.txt
   ` + bin + ` -pkey verify -key SM2.pub -signature HEX file.txt
   ` + bin + ` -pkey text   -cert Certificate.pem
@@ -2991,7 +3006,7 @@ EXAMPLES  (SM2 is the default)
   ` + bin + ` -cipher sm4    -crypt enc -key 00112233... < in > out
   ` + bin + ` -cipher zuc256 -crypt enc -key ... < in > out
   ` + bin + ` -mac zuc256 -key ... < file
-  ` + bin + ` -tcp server -cert server.pem -key server.key
+  ` + bin + ` -tcp server -cert S.crt -key S.key -cacert CA.crt -cakey CA.key
 
 EXAMPLES  (SM9)
   ` + bin + ` -algorithm SM9SIGN -pkey setup -master M.pem -pass 123
@@ -3004,7 +3019,7 @@ EXAMPLES  (SM9)
   ` + bin + ` -algorithm SM9ENCRYPT -pkey decrypt -key bob.pem -id bob
   ` + bin + ` -algorithm SM9ENCRYPT -pkey wrapkey -key M.pub -id bob
   ` + bin + ` -algorithm SM9ENCRYPT -pkey unwrapkey -key bob.pem -id bob
-  
+
 OPTIONS
   -version              print version and exit
   -h, --help            print all flags`)
