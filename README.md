@@ -182,7 +182,7 @@ echo $?
 
 #### SM2 — validate certificate against CRL:
 ```bash
-./gmsmtk -algorithm SM2 -pkey validate -cert Signed.crt -root CRL.pem
+./gmsmtk -algorithm SM2 -pkey validate -cert Signed.crt -crl CRL.pem
 ```
 
 #### SM2 — verify certificate signature:
