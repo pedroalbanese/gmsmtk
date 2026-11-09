@@ -1191,10 +1191,6 @@ func main() {
 // TLCP
 // ===========================================================================
 
-// ===========================================================================
-// TLCP
-// ===========================================================================
-
 func handleTLCP() {
 	if *tcpip == "ip" {
 		consensus := externalip.DefaultConsensus(nil, nil)
@@ -1384,6 +1380,18 @@ func handleSM2() {
 		}
 		pem.Encode(pf, pubBlock)
 		pf.Close()
+
+		absPrivPath, err := filepath.Abs(*prv)
+		if err != nil {
+			log.Fatal("Failed to get absolute path for private key:", err)
+		}
+		absPubPath, err := filepath.Abs(*pub)
+		if err != nil {
+			log.Fatal("Failed to get absolute path for public key:", err)
+		}
+		println("Private key saved to:", absPrivPath)
+		println("Public key saved to:", absPubPath)
+		println("SM2 (256-bit)")
 		fmt.Println(randomart.FromString(string(pem.EncodeToMemory(pubBlock))))
 		os.Exit(0)
 
@@ -2345,6 +2353,12 @@ func runCheckSM2() {
 func handleSM9Sign() {
 	switch *pkey {
 	case "setup":
+		if *pwd == "" {
+			print("MasterKey Passphrase: ")
+			*pwd = readPassword(true)
+		} else if *pwd == "nil" {
+			*pwd = ""
+		}
 		masterKey, err := sm9.GenerateSignMasterKey(rand.Reader)
 		if err != nil {
 			log.Fatal(err)
@@ -2379,10 +2393,24 @@ func handleSM9Sign() {
 		}
 		pem.Encode(pf, &pem.Block{Type: "SM9 SIGN PUBLIC KEY", Bytes: pubBytes})
 		pf.Close()
+
+		absPrivPath, _ := filepath.Abs(*master)
+		absPubPath, _ := filepath.Abs(*pub)
+		println("Master key saved to:", absPrivPath)
+		println("Public key saved to:", absPubPath)
+		println("SM9 Sign Master Public Key (256-bit)")
 		fmt.Println(randomart.FromString(string(pem.EncodeToMemory(&pem.Block{Type: "SM9 SIGN PUBLIC KEY", Bytes: pubBytes}))))
 		os.Exit(0)
 
 	case "keygen":
+		if *pwd == "" {
+			if data, err := ioutil.ReadFile(*master); err == nil {
+				if block, _ := pem.Decode(data); block != nil && IsEncryptedPEMBlock(block) {
+					print("MasterKey Passphrase: ")
+					*pwd = readPassword(false)
+				}
+			}
+		}
 		masterPriv, err := loadSM9SignMaster(*master, *pwd)
 		if err != nil {
 			log.Fatal(err)
@@ -2410,6 +2438,8 @@ func handleSM9Sign() {
 			pem.Encode(f, block)
 		}
 		f.Close()
+		absPrivPath, _ := filepath.Abs(*prv)
+		println("User key saved to:", absPrivPath)
 		os.Exit(0)
 
 	case "text", "modulus":
@@ -2599,6 +2629,12 @@ func loadSM9SignUser(path, password string) (*sm9.SignPrivateKey, error) {
 func handleSM9Encrypt() {
 	switch *pkey {
 	case "setup":
+		if *pwd == "" {
+			print("MasterKey Passphrase: ")
+			*pwd = readPassword(true)
+		} else if *pwd == "nil" {
+			*pwd = ""
+		}
 		masterKey, err := sm9.GenerateEncryptMasterKey(rand.Reader)
 		if err != nil {
 			log.Fatal(err)
@@ -2633,10 +2669,24 @@ func handleSM9Encrypt() {
 		}
 		pem.Encode(pf, &pem.Block{Type: "SM9 ENC PUBLIC KEY", Bytes: pubBytes})
 		pf.Close()
+
+		absPrivPath, _ := filepath.Abs(*master)
+		absPubPath, _ := filepath.Abs(*pub)
+		println("Master key saved to:", absPrivPath)
+		println("Public key saved to:", absPubPath)
+		println("SM9 Encrypt Master Public Key (256-bit)")
 		fmt.Println(randomart.FromString(string(pem.EncodeToMemory(&pem.Block{Type: "SM9 ENC PUBLIC KEY", Bytes: pubBytes}))))
 		os.Exit(0)
 
 	case "keygen":
+		if *pwd == "" {
+			if data, err := ioutil.ReadFile(*master); err == nil {
+				if block, _ := pem.Decode(data); block != nil && IsEncryptedPEMBlock(block) {
+					print("MasterKey Passphrase: ")
+					*pwd = readPassword(false)
+				}
+			}
+		}
 		masterPriv, err := loadSM9EncMaster(*master, *pwd)
 		if err != nil {
 			log.Fatal(err)
@@ -2664,6 +2714,8 @@ func handleSM9Encrypt() {
 			pem.Encode(f, block)
 		}
 		f.Close()
+		absPrivPath, _ := filepath.Abs(*prv)
+		println("User key saved to:", absPrivPath)
 		os.Exit(0)
 
 	case "text", "modulus":
@@ -3009,15 +3061,15 @@ EXAMPLES  (SM2 is the default)
   ` + bin + ` -tcp server -cert S.crt -key S.key -cacert CA.crt -cakey CA.key
 
 EXAMPLES  (SM9)
-  ` + bin + ` -algorithm SM9SIGN -pkey setup -master M.pem -pass 123
-  ` + bin + ` -algorithm SM9SIGN -pkey keygen -master M.pem -id alice
+  ` + bin + ` -algorithm SM9SIGN -pkey setup -master M.pem -pass 123 -pub M.pub
+  ` + bin + ` -algorithm SM9SIGN -pkey keygen -master M.pem -id alice -prv A.pem
   ` + bin + ` -algorithm SM9SIGN -pkey sign   -key alice.pem file.txt
   ` + bin + ` -algorithm SM9SIGN -pkey verify -key M.pub -id alice
   ` + bin + ` -algorithm SM9ENCRYPT -pkey setup -master M.pem -pass 123
   ` + bin + ` -algorithm SM9ENCRYPT -pkey keygen -master M.pem -id bob
-  ` + bin + ` -algorithm SM9ENCRYPT -pkey encrypt -key M.pub -id bob
+  ` + bin + ` -algorithm SM9ENCRYPT -pkey encrypt -key M.pub -id bob -hid 1
   ` + bin + ` -algorithm SM9ENCRYPT -pkey decrypt -key bob.pem -id bob
-  ` + bin + ` -algorithm SM9ENCRYPT -pkey wrapkey -key M.pub -id bob
+  ` + bin + ` -algorithm SM9ENCRYPT -pkey wrapkey -key M.pub -id bob -hid 1
   ` + bin + ` -algorithm SM9ENCRYPT -pkey unwrapkey -key bob.pem -id bob
 
 OPTIONS
