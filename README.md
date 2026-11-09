@@ -234,14 +234,14 @@ echo $?
 
 #### SM9 — wrap / unwrap key:
 ```bash
-./gmsmtk -algorithm SM9ENCRYPT -pkey wrapkey   -key MasterEncPub.pem -id alice -bits 256
-./gmsmtk -algorithm SM9ENCRYPT -pkey unwrapkey -key FulanoEnc.pem    -id alice -bits 256 -signature "$cipher"
+./gmsmtk -algorithm SM9ENCRYPT -pkey wrapkey   -key MasterEncPub.pem -id fulano -hid 1 -bits 256
+./gmsmtk -algorithm SM9ENCRYPT -pkey unwrapkey -key FulanoEnc.pem    -id fulano -bits 256 -cipher "$cipher"
 ```
 
 #### SM9 — key exchange (A and B sides):
 ```bash
-./gmsmtk -algorithm SM9ENCRYPT -pkey derivea -key FulanoEncA.pem -id alice -peerid bob -bits 128
-./gmsmtk -algorithm SM9ENCRYPT -pkey deriveb -key FulanoEncB.pem -id bob   -peerid alice -bits 128
+./gmsmtk -algorithm SM9ENCRYPT -pkey derivea -key FulanoEnc.pem  -id fulano  -peerid sicrano -bits 128
+./gmsmtk -algorithm SM9ENCRYPT -pkey deriveb -key SicranoEnc.pem -id sicrano -peerid fulano  -bits 128
 ```
 
 #### SM9 — parse keys (text or short modulus):
