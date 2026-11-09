@@ -2739,7 +2739,7 @@ func handleSM9Encrypt() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		cipherHex := strings.ReplaceAll(strings.ReplaceAll(*sig, " ", ""), "\n", "")
+		cipherHex := strings.ReplaceAll(strings.ReplaceAll(*cph, " ", ""), "\n", "")
 		ct, err := hex.DecodeString(cipherHex)
 		if err != nil {
 			log.Fatal(err)
